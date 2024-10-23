@@ -9,6 +9,41 @@
 
 // #define DEBUG_PRINT // enable debug print messages
 
+struct stMessage
+{
+  uint8_t u8ID;
+  uint8_t u8Task;
+  uint16_t u16Addr;
+  uint16_t u16Msg;
+  uint16_t u16Crc;
+};
+
+enum eFunction
+{
+  E_READ = 1,
+  E_WRITE = 3,
+  E_RDWR = 5
+};
+
+struct stFunctions
+{
+  enum eFunction eFunc;
+  uint16_t u16Addr;
+  uint16_t (*rd_fnc)(void);
+  int (*wr_fnc)(uint16_t);
+};
+
+static uint16_t fn_rd_test();
+static int fn_wr_test(uint16_t wr_val);
+
+static struct stFunctions ProtocolFunktions[] = 
+{
+  {E_RDWR, 0001, fn_rd_test, fn_wr_test},
+  {E_READ, 0003, fn_rd_test, nullptr}
+};
+
+
+
 enum eStates
 {
   NO_STATE = 0,
@@ -125,7 +160,52 @@ bool fn_IsEncInFault(uint32_t TimeNow, bool bFltLogic)
   return bRet;
 }
 
-void loop()
+/// @brief check if a message was received
+/// @param u32Timeout 
+/// @param tMsg 
+/// @return 
+int fn_checkForMsg(uint32_t u32Timeout, struct stMessage *tMsg)
+{
+  int ret = 0;
+  uint8_t i = 0;
+  uint8_t u8DataFrame[8] = {0};
+
+  while (Serial.available() > 0)
+  {
+    u8DataFrame[i] = Serial.read();
+    i++;
+    // read the incoming byte:
+    // command = Serial.read();
+
+    // say what you got:
+    Serial.print("I received: ");
+    Serial.println(u8DataFrame[i], HEX);
+
+    if(i > 7)
+    {
+      // memcopy the received frame to the message format
+      ret = 1;
+      break;
+    }
+  }
+
+  return ret;
+}
+
+
+void fn_HandleMsg(struct stMessage tMsg)
+{
+  uint8_t i = 0;
+
+  for(i = 0; i < sizeof(ProtocolFunktions)/sizeof(ProtocolFunktions[0]); i++)
+  {
+    
+  }
+}
+
+
+
+void fn_updateMotor()
 {
   uint32_t u32TimeNow = 0;
   eStates eStateTransition;
@@ -139,16 +219,9 @@ void loop()
 
   u32TimeNow = millis();
 
+  
   // send data only when you receive data:
-  if (Serial.available() > 0)
-  {
-    // read the incoming byte:
-    command = Serial.read();
-
-    // say what you got:
-    Serial.print("I received: ");
-    Serial.println(command, DEC);
-  }
+  
 
   bFltState = fn_IsEncInFault(u32TimeNow, EncFlt.is_lo());
   eStateTransition = fn_checkForTransition(command);
@@ -176,65 +249,66 @@ void loop()
     }
     EncSlp.set_lo();
 
-    if (command == 'k')
-    {
-      Serial.println("***");
-      Serial.print("Current value for Kp is: ");
-      Serial.println(m_fKp);
-      Serial.println("Now, send the new value from serial monitor, i.e. 0.06");
-      float newKp;
-      while (bResume == false)
-      {
-        if (Serial.available() > 0)
-        {
-          newKp = Serial.parseFloat();
-          if (newKp != 0)
-          {
-            Serial.print("New Kp value is: ");
-            Serial.println(newKp);
-            m_fKp = newKp;
-            bResume = true;
-            command = 0;
-          }
-        }
-      }
-    }
-    if (command == 't')
-    {
-      Serial.println("***");
-      Serial.print("Current value for Ti is: ");
-      Serial.println(m_fTi);
-      Serial.println("Now, send the new value from serial monitor, i.e. 0.06");
-      float newTi;
-      while (bResume == false)
-      {
-        if (Serial.available() > 0)
-        {
-          newTi = Serial.parseFloat();
-          if (newTi != 0)
-          {
-            Serial.print("New Ti value is: ");
-            Serial.println(newTi);
-            m_fTi = newTi;
-            bResume = true;
-            command = 0;
-          }
-        }
-      }
-    }
+    // if (command == 'k')
+    // {
+    //   Serial.println("***");
+    //   Serial.print("Current value for Kp is: ");
+    //   Serial.println(m_fKp);
+    //   Serial.println("Now, send the new value from serial monitor, i.e. 0.06");
+    //   float newKp;
+    //   while (bResume == false)
+    //   {
+    //     if (Serial.available() > 0)
+    //     {
+    //       newKp = Serial.parseFloat();
+    //       if (newKp != 0)
+    //       {
+    //         Serial.print("New Kp value is: ");
+    //         Serial.println(newKp);
+    //         m_fKp = newKp;
+    //         bResume = true;
+    //         command = 0;
+    //       }
+    //     }
+    //   }
+    // }
+    // if (command == 't')
+    // {
+    //   Serial.println("***");
+    //   Serial.print("Current value for Ti is: ");
+    //   Serial.println(m_fTi);
+    //   Serial.println("Now, send the new value from serial monitor, i.e. 0.06");
+    //   float newTi;
+    //   while (bResume == false)
+    //   {
+    //     if (Serial.available() > 0)
+    //     {
+    //       newTi = Serial.parseFloat();
+    //       if (newTi != 0)
+    //       {
+    //         Serial.print("New Ti value is: ");
+    //         Serial.println(newTi);
+    //         m_fTi = newTi;
+    //         bResume = true;
+    //         command = 0;
+    //       }
+    //     }
+    //   }
+    // }
 
-    if(command == 'c')
-    {
-      Serial.print("Using P-control, press v to change to PI-control\n");
-      P_speed = new P_control(m_fKp);
-      command = 0;
-    }
-    if(command == 'v')
-    {
-      Serial.print("Using PI-control, press c to change to P-control\n");
-      P_speed = new PI_control(m_fKp, m_fTi, 0.1, 12500, 1);
-      command = 0;
-    }
+    P_speed = new PI_control(m_fKp, m_fTi, 0.1, 12500, 1);
+
+    // if(command == 'c')
+    // {
+    //   Serial.print("Using P-control, press v to change to PI-control\n");
+    //   P_speed = new P_control(m_fKp);
+    //   command = 0;
+    // }
+    // if(command == 'v')
+    // {
+    //   Serial.print("Using PI-control, press c to change to P-control\n");
+    //   command = 0;
+    // }
     
 
     // eStateTransition = fn_checkForTransition(command);
@@ -258,29 +332,29 @@ void loop()
     led.set_hi();
     EncSlp.set_hi();
 
-    if (command == 's')
-    {
-      Serial.println("***");
-      Serial.print("Current value for TargetRpm is: ");
-      Serial.println(targetRpm);
-      Serial.println("Now, send the new value from serial monitor, i.e. 9050");
-      uint16_t newTargetRpm;
-      while (bResume == false)
-      {
-        if (Serial.available() > 0)
-        {
-          newTargetRpm = Serial.parseInt();
-          if (newTargetRpm != 0)
-          {
-            Serial.print("New TargetRpm value is: ");
-            Serial.println(newTargetRpm);
-            targetRpm = newTargetRpm;
-            bResume = true;
-            command = 0;
-          }
-        }
-      }
-    }
+    // if (command == 's')
+    // {
+    //   Serial.println("***");
+    //   Serial.print("Current value for TargetRpm is: ");
+    //   Serial.println(targetRpm);
+    //   Serial.println("Now, send the new value from serial monitor, i.e. 9050");
+    //   uint16_t newTargetRpm;
+    //   while (bResume == false)
+    //   {
+    //     if (Serial.available() > 0)
+    //     {
+    //       newTargetRpm = Serial.parseInt();
+    //       if (newTargetRpm != 0)
+    //       {
+    //         Serial.print("New TargetRpm value is: ");
+    //         Serial.println(newTargetRpm);
+    //         targetRpm = newTargetRpm;
+    //         bResume = true;
+    //         command = 0;
+    //       }
+    //     }
+    //   }
+    // }
 
     if (bUpdateSpeed == true)
     {
@@ -338,6 +412,24 @@ void loop()
 
     break;
   }
+}
+
+void loop()
+{
+  // check for msg
+  // handle incomming messages
+  // do update motor
+  int iResult = 0;
+  struct stMessage tMsg;
+
+  iResult = fn_checkForMsg(2000, &tMsg);
+
+  if(iResult > 0)
+  {
+    fn_HandleMsg(tMsg);
+  }
+
+  fn_updateMotor();
 }
 
 // interupt service routine of external int0

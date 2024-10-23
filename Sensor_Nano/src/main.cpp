@@ -1,18 +1,42 @@
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 
-// put function declarations here:
-int myFunction(int, int);
+
+SoftwareSerial mySerial(2, 3);
+
+// Define the analog pin you're using
+const int analogPin = A0;  // Analog pin to read the voltage (e.g., A0)
+
+// Variables to store the analog value and voltage
+int analogValue = 0;
+float voltage = 0.0;
+
+// The reference voltage (usually 5V for Arduino Nano)
+const float referenceVoltage = 5.0;
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  // Initialize the serial communication
+  Serial.begin(9600);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void update_sensor() {
+  // Read the analog value (0 to 1023)
+  analogValue = analogRead(analogPin);
+  
+  // Convert the analog value to voltage
+  voltage = (analogValue * referenceVoltage) / 1023.0;
+
+  // Print the voltage to the Serial Monitor
+  Serial.print("Voltage: ");
+  Serial.println(voltage);
+
+  // Wait for 20 milliseconds before the next reading
+  
 }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void loop(){
+  update_sensor();
+
+  delay(20);
+
 }

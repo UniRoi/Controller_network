@@ -226,30 +226,24 @@ int encodeMessage(stMessage *rec_msg, uint16_t *sensor_value)
     }
 }
 
-
+// TODO: Define the way of the input
 // Ask Sensor for data
-stMessage sensorMessage(uint16_t reg)
-{
-    stMessage m_sensor_message;
-    m_sensor_message.u8ID = 0x02; // 02 for Sensor
-    m_sensor_message.u8Task = 0x03; // 03 for read
-    m_sensor_message.u16Addr = reg; // register
-    m_sensor_message.u16Msg = 0x0001;
-    m_sensor_message.u16Crc = detChecksum();
-    return m_sensor_message;
-}
+// stMessage sensorMessage(stMessage message)
+// {
+    
+// }
 
-// write Motor data
-stMessage motorMessage(uint16_t reg, uint16_t data)
-{
-    stMessage m_motor_message;
-    m_motor_message.u8ID = 0x01; // 01 for Motor
-    m_motor_message.u8Task = 0x06; // 03 for write
-    m_motor_message.u16Addr = reg; // register
-    m_motor_message.u16Msg = data;
-    m_motor_message.u16Crc = detChecksum();
-    return m_motor_message;
-}
+// // write Motor data
+// stMessage motorMessage(uint16_t reg, uint16_t data)
+// {
+//     stMessage m_motor_message;
+//     m_motor_message.u8ID = 0x01; // 01 for Motor
+//     m_motor_message.u8Task = 0x06; // 03 for write
+//     m_motor_message.u16Addr = reg; // register
+//     m_motor_message.u16Msg = data;
+//     m_motor_message.u16Crc = detChecksum();
+//     return m_motor_message;
+// }
 
 
 
@@ -279,6 +273,8 @@ int receiveTask()
 
 int main(void)
 {
+
+    sendMessage(int argc, char *argv[])
     // /* Threads for reading from Controller 2 and writing to Controller 1 */
     // std::thread sendThread (sendTask);
     // std::thread receiveThread (receiveTask);

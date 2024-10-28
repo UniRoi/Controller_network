@@ -319,6 +319,7 @@ int fn_TransmitResponse(struct stMessage *tMsg)
   int iRet = -1;
   size_t len = 0;
   uint8_t u8DataFrame[8] = {0};
+  uint16_t snd_crc = 0;
 
   if (tMsg != nullptr)
   {
@@ -329,8 +330,11 @@ int fn_TransmitResponse(struct stMessage *tMsg)
     u8DataFrame[3] = (uint8_t)((tMsg->u16Addr & 0x00FF) >> 0);
     u8DataFrame[4] = (uint8_t)((tMsg->u16Msg & 0xFF00) >> 8);
     u8DataFrame[5] = (uint8_t)((tMsg->u16Msg & 0x00FF) >> 0);
-    u8DataFrame[6] = (uint8_t)((tMsg->u16Crc & 0xFF00) >> 8);
-    u8DataFrame[7] = (uint8_t)((tMsg->u16Crc & 0x00FF) >> 0);
+
+    snd_crc = ModRTU_CRC(u8DataFrame, 6);
+    // snd_crc += 1; // simulate a sending crc error
+    u8DataFrame[6] = (uint8_t)((snd_crc & 0xFF00) >> 8);
+    u8DataFrame[7] = (uint8_t)((snd_crc & 0x00FF) >> 0);
 
     len = Serial.write(u8DataFrame, 8);
     if (len == 8)

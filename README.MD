@@ -25,3 +25,21 @@ Messages are built up as follows:
 
 ## Part 2
 
+### simulating crc error
+
+#### RPi is sending wrong crc value
+
+Message is ignored from Arduino
+
+Picture here
+
+#### Arduino is sending a wrong crc in the answer
+
+Print from linux terminal:
+
+    pi@rpi-matthiasr24:~/Controller_network/Master_Rpi $ ./modbus 1 6 1 128
+    Sent request: 01 06 0001 0080 aad9
+    CRC Error, will not use message. Received: 0xaada Calculated: 0xaad9
+
+
+Picture here

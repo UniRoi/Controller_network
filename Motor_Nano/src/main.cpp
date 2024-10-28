@@ -19,10 +19,10 @@ SoftwareSerial mySerial(pin_rx, pin_tx);
 #define MAX_SPEED 12500
 #define MIN_SPEED 20
 
-static uint8_t ill_func = 0x01;
-static uint8_t ill_addr = 0x02;
-static uint8_t ill_data = 0x03;
-static uint8_t dev_fail = 0x04;
+static const uint8_t ill_func = 0x01;
+static const uint8_t ill_addr = 0x02;
+static const uint8_t ill_data = 0x03;
+static const uint8_t dev_fail = 0x04;
 
 struct stMessage
 {
@@ -61,12 +61,22 @@ static struct stFunctions ProtocolFunktions[] =
 
 enum eStates
 {
-  NO_STATE = 0,
-  INIT = 1,
-  PRE_OPERATIONAL = 3,
-  OPERATIONAL = 6,
-  STOPPED = 10
+  NO_STATE = 0x00,
+  OPERATIONAL = 0x01,
+  STOPPED = 0x02,
+  PRE_OPERATIONAL = 0x80,
+  INIT = 0x81,
+  E_NODE_RESET_COM = 0x82
 };
+
+// enum eCANOpenStates
+// {
+//   E_NODE_OPERATIONAL = 0x01,
+//   E_NODE_STOP = 0x02,
+//   E_NODE_PRE_OPERATIONAL = 0x80,
+//   E_NODE_RESET = 0x81,
+//   E_NODE_RESET_COM = 0x82
+// };
 
 static uint32_t u32LastTime;
 
@@ -177,6 +187,14 @@ bool fn_IsEncInFault(uint32_t TimeNow, bool bFltLogic)
   return bRet;
 }
 
+// ---------------------------------------------------------------------------------------
+// Modbus RTU functions
+// ---------------------------------------------------------------------------------------
+
+/// @brief Calculate a ModRTU Crc value for a buffer of a given length
+/// @param buf [uint8_t] pointer to buffer
+/// @param len [int] length of buffer
+/// @return [uint16_t] calculated crc value
 uint16_t ModRTU_CRC(uint8_t buf[], int len)
 {
    uint16_t crc = 0xFFFF;
@@ -206,11 +224,14 @@ uint16_t ModRTU_CRC(uint8_t buf[], int len)
    return crc;
 }
 
+// ---------------------------------------------------------------------------------------
+// receiving and sending functions
+// ---------------------------------------------------------------------------------------
+
 /// @brief check if a message was received
-/// @param u32Timeout
-/// @param tMsg
-/// @return
-int fn_checkForMsg(uint32_t u32Timeout, struct stMessage *tMsg)
+/// @param tMsg [struct stMessage] pointer to message struct
+/// @return [int] 0 if no msg was received, 1 if a msg was received, -1 for false msg len, -2 for crc error
+int fn_checkForMsg(struct stMessage *tMsg)
 {
   int ret = 0;
   size_t msglen = 0;
@@ -255,68 +276,12 @@ int fn_checkForMsg(uint32_t u32Timeout, struct stMessage *tMsg)
   return ret;
 }
 
-bool fn_CheckFunctionOnAddr(uint8_t u8Task, enum eFunction eFunc)
-{
-  bool bRet = false;
-
-  if (u8Task == (uint8_t)eFunc)
-  {
-    bRet = true;
-  }
-}
-
-void fn_HandleMsg(struct stMessage *tMsg)
-{
-  uint8_t i = 0;
-  bool bFound = false;
-  bool bIllAddr = true;
-  bool bIllFunc = true;
-  bool bIllData = true;
-  // check for crc error here
-
-  for (i = 0; i < sizeof(ProtocolFunktions) / sizeof(ProtocolFunktions[0]); i++)
-  {
-    if (tMsg->u16Addr == ProtocolFunktions[i].u16Addr)
-    {
-      bIllAddr = false;
-      if (fn_CheckFunctionOnAddr(tMsg->u8Task, ProtocolFunktions[i].eFunc) == true)
-      {
-        bIllFunc = false;
-        if ((tMsg->u8Task == (uint8_t)E_READ) && (ProtocolFunktions[i].rd_fnc != nullptr))
-        {
-          bFound = true;
-          tMsg->u16Msg = ProtocolFunktions[i].rd_fnc();
-        }
-        else if ((tMsg->u8Task == (uint8_t)E_WRITE) && (ProtocolFunktions[i].wr_fnc != nullptr))
-        {
-          bFound = true;
-          bIllData = (bool)ProtocolFunktions[i].wr_fnc(tMsg->u16Msg);
-        }
-      }
-    }
-  }
-
-  // set errors if not found
-  if (bIllAddr == true)
-  {
-    tMsg->u8Task |= (1 << 7);
-    tMsg->u16Msg = (uint16_t)ill_addr;
-  }
-  if (bIllFunc == true)
-  {
-    tMsg->u8Task |= (1 << 7);
-    tMsg->u16Msg = (uint16_t)ill_func;
-  }
-  if (bIllData == true)
-  {
-    tMsg->u8Task |= (1 << 7);
-    tMsg->u16Msg = (uint16_t)ill_data;
-  }
-}
-
+/// @brief Transmit a message, currently only fixed length messages are transmitted
+/// @param tMsg [struct stMessage] pointer to message
+/// @return -2 if tMsg was nullpointer, -1 if not 8 bytes were transmitted, 0 on success
 int fn_TransmitResponse(struct stMessage *tMsg)
 {
-  int iRet = -1;
+  int iRet = -2;
   size_t len = 0;
   uint8_t u8DataFrame[8] = {0};
   uint16_t snd_crc = 0;
@@ -341,10 +306,66 @@ int fn_TransmitResponse(struct stMessage *tMsg)
     {
       iRet = 0;
     }
+    else
+    {
+      iRet = -1;
+    }
   }
 
   return iRet;
 }
+
+/// @brief Handle the received message and return new message with the same pointer
+/// @param tMsg [struct stMessage] pointer to message 
+void fn_HandleMsg(struct stMessage *tMsg)
+{
+  uint8_t i = 0;
+  bool bFound = false;
+  bool bIllAddr = true;
+  bool bIllFunc = true;
+  bool bIllData = true;
+  // check for crc error here
+
+  for (i = 0; i < sizeof(ProtocolFunktions) / sizeof(ProtocolFunktions[0]); i++)
+  {
+    if (tMsg->u16Addr == ProtocolFunktions[i].u16Addr)
+    {
+      bIllAddr = false;
+      
+      if ((tMsg->u8Task == (uint8_t)E_READ) && (ProtocolFunktions[i].rd_fnc != nullptr))
+      {
+        bIllFunc = false;
+        bFound = true;
+        tMsg->u16Msg = ProtocolFunktions[i].rd_fnc();
+      }
+      else if ((tMsg->u8Task == (uint8_t)E_WRITE) && (ProtocolFunktions[i].wr_fnc != nullptr))
+      {
+        bIllFunc = false;
+        bFound = true;
+        bIllData = (bool)ProtocolFunktions[i].wr_fnc(tMsg->u16Msg);
+      }
+    }
+  }
+
+  // set errors if not found
+  if (bIllAddr == true)
+  {
+    tMsg->u8Task |= (1 << 7);
+    tMsg->u16Msg = (uint16_t)ill_addr;
+  }
+  else if (bIllFunc == true)
+  {
+    tMsg->u8Task |= (1 << 7);
+    tMsg->u16Msg = (uint16_t)ill_func;
+  }
+  else if (bIllData == true)
+  {
+    tMsg->u8Task |= (1 << 7);
+    tMsg->u16Msg = (uint16_t)ill_data;
+  }
+}
+
+
 
 void fn_updateMotor()
 {
@@ -560,11 +581,11 @@ void loop()
   int iResult = 0;
   struct stMessage tMsg;
 
-  iResult = fn_checkForMsg(2000, &tMsg);
+  iResult = fn_checkForMsg(&tMsg);
 
   if (iResult > 0)
   {
-    // fn_HandleMsg(&tMsg);
+    fn_HandleMsg(&tMsg);
     fn_TransmitResponse(&tMsg);
   }
 
@@ -617,6 +638,11 @@ ISR(TIMER1_COMPB_vect)
 //   // SysTime.Inc_SysTimeMs();
 // }
 
+// ---------------------------------------------------------------------------------------
+// Supported Protocol functions
+// ---------------------------------------------------------------------------------------
+
+
 static uint16_t fn_rd_state()
 {
 }
@@ -628,7 +654,34 @@ static uint16_t fn_rd_rpm()
 
 static int fn_wr_state(uint16_t wr_val)
 {
-  return 1;
+  int iRet = 0;
+
+  if(wr_val == (uint16_t)INIT)
+  {
+    controllerState = INIT;
+  }
+  else if(wr_val == (uint16_t)STOPPED)
+  {
+    controllerState = STOPPED;
+  }
+  else if(wr_val == (uint16_t)OPERATIONAL)
+  {
+    controllerState = OPERATIONAL;
+  }
+  else if(wr_val == (uint16_t)PRE_OPERATIONAL)
+  {
+    controllerState = PRE_OPERATIONAL;
+  }
+  else if(wr_val == (uint16_t)E_NODE_RESET_COM)
+  {
+    controllerState = E_NODE_RESET_COM;
+  }
+  else
+  {
+    iRet = 1;
+  }
+
+  return iRet;
 }
 
 static int fn_wr_speed(uint16_t wr_val)

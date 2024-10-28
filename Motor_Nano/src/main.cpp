@@ -177,6 +177,35 @@ bool fn_IsEncInFault(uint32_t TimeNow, bool bFltLogic)
   return bRet;
 }
 
+uint16_t ModRTU_CRC(uint8_t buf[], int len)
+{
+   uint16_t crc = 0xFFFF;
+   for (int pos = 0; pos < len; pos++) 
+   {
+   crc ^= (uint16_t)buf[pos];
+      // XOR byte into least sig. byte of crc
+      for (int i = 8; i != 0; i--) 
+      {
+         if ((crc & 0x0001) != 0) 
+         {
+            crc >>= 1;
+            crc ^= 0xA001;
+         }
+         else
+         {
+            crc >>= 1;
+         }
+      }
+      // Loop over each bit
+      // If the LSB is set
+      // Shift right and XOR 0xA001
+      // Else LSB is not set
+      // Just shift right
+   }
+   // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
+   return crc;
+}
+
 /// @brief check if a message was received
 /// @param u32Timeout
 /// @param tMsg
@@ -186,28 +215,40 @@ int fn_checkForMsg(uint32_t u32Timeout, struct stMessage *tMsg)
   int ret = 0;
   size_t msglen = 0;
   uint8_t u8DataFrame[8] = {0};
+  uint16_t rec_crc = 0;
 
   if (Serial.available() > 0)
   {
     msglen = Serial.readBytes(u8DataFrame, 8);
 
-    if (u8DataFrame[0] == NODE_ID)
-    { // Requested id is motor id
-      if (msglen == 8)
-      {
-        tMsg->u8ID = u8DataFrame[0];
-        tMsg->u8Task = u8DataFrame[1];
-        tMsg->u16Addr = (uint16_t) ((((uint16_t)u8DataFrame[2]) << 8) | (uint16_t)u8DataFrame[3]);
-        tMsg->u16Msg = (uint16_t) ((((uint16_t)u8DataFrame[4])  << 8) | (uint16_t)u8DataFrame[5]);
-        tMsg->u16Crc = (uint16_t) ((((uint16_t)u8DataFrame[6])  << 8) | (uint16_t)u8DataFrame[7]);
+    rec_crc = ModRTU_CRC(u8DataFrame, 6);
 
-        ret = 1;
+    if(rec_crc == (uint16_t) ((((uint16_t)u8DataFrame[6])  << 8) | (uint16_t)u8DataFrame[7]))
+    {
+      if (u8DataFrame[0] == NODE_ID)
+      { // Requested id is motor id
+        if (msglen == 8)
+        {
+          tMsg->u8ID = u8DataFrame[0];
+          tMsg->u8Task = u8DataFrame[1];
+          tMsg->u16Addr = (uint16_t) ((((uint16_t)u8DataFrame[2]) << 8) | (uint16_t)u8DataFrame[3]);
+          tMsg->u16Msg = (uint16_t) ((((uint16_t)u8DataFrame[4])  << 8) | (uint16_t)u8DataFrame[5]);
+          // tMsg->u16Crc = (uint16_t) ((((uint16_t)u8DataFrame[6])  << 8) | (uint16_t)u8DataFrame[7]);
+          tMsg->u16Crc = rec_crc;
+
+          ret = 1;
+        }
+        else
+        {
+          // received a msg but not 8 bytes
+          ret = -1;
+        }
       }
-      else
-      {
-        // received a msg but not 8 bytes
-        ret = -1;
-      }
+    }
+    else
+    {
+      // crc is not valid
+      ret = -2;
     }
   }
 

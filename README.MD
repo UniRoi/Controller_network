@@ -23,5 +23,30 @@ Messages are built up as follows:
  Message: Data  
  CRC: Calculated
 
+ Error codes:
+static uint8_t ill_func = 0x01;
+static uint8_t ill_addr = 0x02;
+static uint8_t ill_data = 0x03;
+static uint8_t dev_fail = 0x04;
+
+
 ## Part 2
 
+### simulating crc error
+
+#### RPi is sending wrong crc value
+
+Message is ignored from Arduino
+
+Picture here
+
+#### Arduino is sending a wrong crc in the answer
+
+Print from linux terminal:
+
+    pi@rpi-matthiasr24:~/Controller_network/Master_Rpi $ ./modbus 1 6 1 128
+    Sent request: 01 06 0001 0080 aad9
+    CRC Error, will not use message. Received: 0xaada Calculated: 0xaad9
+
+
+Picture here

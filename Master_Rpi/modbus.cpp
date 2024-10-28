@@ -83,7 +83,7 @@ int main(int argc, char *argv[]){
    tcflush(file, TCIFLUSH); // discard file information
    tcsetattr(file, TCSANOW, &options);
 
-   const size_t MSG_LEN = 6;
+   const size_t MSG_LEN = 8;
    uint8_t msg[MSG_LEN];
    uint8_t rd_msg[MSG_LEN];
    struct stMessage tMsg;
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]){
    
    // from his notes: this number has low and high bytes swapped
    // hopefully this doesn't explode in the future ^^ 
-   tMsg.u16Crc = ModRTU_CRC(msg, MSG_LEN);
+   tMsg.u16Crc = ModRTU_CRC(msg, 6);
    // tMsg.u16Crc = 0x55aa;
 
    printf("Sent request: %02x %02x %04x %04x %04x\n", tMsg.u8ID, tMsg.u8Task, tMsg.u16Addr, tMsg.u16Msg, tMsg.u16Crc);
@@ -128,10 +128,15 @@ int main(int argc, char *argv[]){
       perror("Failed to read from the input\n");
       return -1;
    }
+   uint16_t rd_crc = ModRTU_CRC(rd_msg, 6);
 
    if (count==0) printf("There was no data available to read!\n");
+   else if(rd_crc != (uint16_t) ((((uint16_t)rd_msg[6])  << 8) | (uint16_t)rd_msg[7]))
+   {
+      printf("CRC Error, will not use message. Received: 0x%02x%02x Calculated: 0x%04x\n", rd_msg[6], rd_msg[7], rd_crc);
+   }
    else {
-      receive[count]=0;  //There is no null character sent by the Arduino
+      // receive[count]=0;  //There is no null character sent by the Arduino
       printf("The following was read in [%d]: %02x %02x %02x%02x %02x%02x %02x%02x\n",count, rd_msg[0], rd_msg[1],rd_msg[2], rd_msg[3],rd_msg[4], rd_msg[5],rd_msg[6], rd_msg[7]);
    }
 

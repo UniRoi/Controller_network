@@ -6,8 +6,23 @@
 #include <Arduino.h>
 
 #include <avr/interrupt.h>
+#include <SoftwareSerial.h>
+
+#define pin_tx 9
+#define pin_rx 8
+
+SoftwareSerial mySerial(pin_rx, pin_tx);
 
 // #define DEBUG_PRINT // enable debug print messages
+#define NODE_ID 0x01
+
+#define MAX_SPEED 12500
+#define MIN_SPEED 20
+
+static uint8_t ill_func = 0x01;
+static uint8_t ill_addr = 0x02;
+static uint8_t ill_data = 0x03;
+static uint8_t dev_fail = 0x04;
 
 struct stMessage
 {
@@ -20,9 +35,9 @@ struct stMessage
 
 enum eFunction
 {
-  E_READ = 1,
-  E_WRITE = 3,
-  E_RDWR = 5
+  E_READ = 3,
+  E_WRITE = 6,
+  E_RDWR = 9
 };
 
 struct stFunctions
@@ -33,16 +48,16 @@ struct stFunctions
   int (*wr_fnc)(uint16_t);
 };
 
-static uint16_t fn_rd_test();
-static int fn_wr_test(uint16_t wr_val);
+static uint16_t fn_rd_state();
+static uint16_t fn_rd_rpm();
+static int fn_wr_state(uint16_t wr_val);
+static int fn_wr_speed(uint16_t wr_val);
 
-static struct stFunctions ProtocolFunktions[] = 
-{
-  {E_RDWR, 0001, fn_rd_test, fn_wr_test},
-  {E_READ, 0003, fn_rd_test, nullptr}
-};
-
-
+static struct stFunctions ProtocolFunktions[] =
+    {
+        {E_RDWR, 1, fn_rd_state, fn_wr_state},
+        {E_READ, 5, fn_rd_rpm, nullptr},
+        {E_WRITE, 9, nullptr, fn_wr_speed}};
 
 enum eStates
 {
@@ -57,7 +72,7 @@ static uint32_t u32LastTime;
 
 volatile bool bUpdateSpeed;
 static int command = 0;
-uint16_t targetRpm = 10000;
+static uint16_t targetRpm = 10000;
 
 encoder Encoder(2, 3);
 Analog_out ana_out(1);
@@ -72,13 +87,14 @@ static float m_fTi = 0.41;
 
 Controller *P_speed = nullptr;
 
-
-
 eStates controllerState = eStates::INIT;
 
 void setup()
 {
   // put your setup code here, to run once:
+
+  pinMode(pin_tx, OUTPUT);
+  pinMode(pin_rx, INPUT);
 
   bUpdateSpeed = false;
 
@@ -96,7 +112,8 @@ void setup()
   sei();
 
   // Add serial for part 2
-  Serial.begin(115200);
+  Serial.begin(115200, SERIAL_8N1);
+  mySerial.begin(115200);
 
   u32LastTime = millis();
 }
@@ -161,49 +178,128 @@ bool fn_IsEncInFault(uint32_t TimeNow, bool bFltLogic)
 }
 
 /// @brief check if a message was received
-/// @param u32Timeout 
-/// @param tMsg 
-/// @return 
+/// @param u32Timeout
+/// @param tMsg
+/// @return
 int fn_checkForMsg(uint32_t u32Timeout, struct stMessage *tMsg)
 {
   int ret = 0;
-  uint8_t i = 0;
+  size_t msglen = 0;
   uint8_t u8DataFrame[8] = {0};
 
-  while (Serial.available() > 0)
+  if (Serial.available() > 0)
   {
-    u8DataFrame[i] = Serial.read();
-    i++;
-    // read the incoming byte:
-    // command = Serial.read();
+    msglen = Serial.readBytes(u8DataFrame, 8);
 
-    // say what you got:
-    Serial.print("I received: ");
-    Serial.println(u8DataFrame[i], HEX);
+    if (u8DataFrame[0] == NODE_ID)
+    { // Requested id is motor id
+      if (msglen == 8)
+      {
+        tMsg->u8ID = u8DataFrame[0];
+        tMsg->u8Task = u8DataFrame[1];
+        tMsg->u16Addr = (uint16_t) ((((uint16_t)u8DataFrame[2]) << 8) | (uint16_t)u8DataFrame[3]);
+        tMsg->u16Msg = (uint16_t) ((((uint16_t)u8DataFrame[4])  << 8) | (uint16_t)u8DataFrame[5]);
+        tMsg->u16Crc = (uint16_t) ((((uint16_t)u8DataFrame[6])  << 8) | (uint16_t)u8DataFrame[7]);
 
-    if(i > 7)
-    {
-      // memcopy the received frame to the message format
-      ret = 1;
-      break;
+        ret = 1;
+      }
+      else
+      {
+        // received a msg but not 8 bytes
+        ret = -1;
+      }
     }
   }
 
   return ret;
 }
 
-
-void fn_HandleMsg(struct stMessage tMsg)
+bool fn_CheckFunctionOnAddr(uint8_t u8Task, enum eFunction eFunc)
 {
-  uint8_t i = 0;
+  bool bRet = false;
 
-  for(i = 0; i < sizeof(ProtocolFunktions)/sizeof(ProtocolFunktions[0]); i++)
+  if (u8Task == (uint8_t)eFunc)
   {
-    
+    bRet = true;
   }
 }
 
+void fn_HandleMsg(struct stMessage *tMsg)
+{
+  uint8_t i = 0;
+  bool bFound = false;
+  bool bIllAddr = true;
+  bool bIllFunc = true;
+  bool bIllData = true;
+  // check for crc error here
 
+  for (i = 0; i < sizeof(ProtocolFunktions) / sizeof(ProtocolFunktions[0]); i++)
+  {
+    if (tMsg->u16Addr == ProtocolFunktions[i].u16Addr)
+    {
+      bIllAddr = false;
+      if (fn_CheckFunctionOnAddr(tMsg->u8Task, ProtocolFunktions[i].eFunc) == true)
+      {
+        bIllFunc = false;
+        if ((tMsg->u8Task == (uint8_t)E_READ) && (ProtocolFunktions[i].rd_fnc != nullptr))
+        {
+          bFound = true;
+          tMsg->u16Msg = ProtocolFunktions[i].rd_fnc();
+        }
+        else if ((tMsg->u8Task == (uint8_t)E_WRITE) && (ProtocolFunktions[i].wr_fnc != nullptr))
+        {
+          bFound = true;
+          bIllData = (bool)ProtocolFunktions[i].wr_fnc(tMsg->u16Msg);
+        }
+      }
+    }
+  }
+
+  // set errors if not found
+  if (bIllAddr == true)
+  {
+    tMsg->u8Task |= (1 << 7);
+    tMsg->u16Msg = (uint16_t)ill_addr;
+  }
+  if (bIllFunc == true)
+  {
+    tMsg->u8Task |= (1 << 7);
+    tMsg->u16Msg = (uint16_t)ill_func;
+  }
+  if (bIllData == true)
+  {
+    tMsg->u8Task |= (1 << 7);
+    tMsg->u16Msg = (uint16_t)ill_data;
+  }
+}
+
+int fn_TransmitResponse(struct stMessage *tMsg)
+{
+  int iRet = -1;
+  size_t len = 0;
+  uint8_t u8DataFrame[8] = {0};
+
+  if (tMsg != nullptr)
+  {
+
+    u8DataFrame[0] = tMsg->u8ID;
+    u8DataFrame[1] = tMsg->u8Task;
+    u8DataFrame[2] = (uint8_t)((tMsg->u16Addr & 0xFF00) >> 8);
+    u8DataFrame[3] = (uint8_t)((tMsg->u16Addr & 0x00FF) >> 0);
+    u8DataFrame[4] = (uint8_t)((tMsg->u16Msg & 0xFF00) >> 8);
+    u8DataFrame[5] = (uint8_t)((tMsg->u16Msg & 0x00FF) >> 0);
+    u8DataFrame[6] = (uint8_t)((tMsg->u16Crc & 0xFF00) >> 8);
+    u8DataFrame[7] = (uint8_t)((tMsg->u16Crc & 0x00FF) >> 0);
+
+    len = Serial.write(u8DataFrame, 8);
+    if (len == 8)
+    {
+      iRet = 0;
+    }
+  }
+
+  return iRet;
+}
 
 void fn_updateMotor()
 {
@@ -219,9 +315,7 @@ void fn_updateMotor()
 
   u32TimeNow = millis();
 
-  
   // send data only when you receive data:
-  
 
   bFltState = fn_IsEncInFault(u32TimeNow, EncFlt.is_lo());
   eStateTransition = fn_checkForTransition(command);
@@ -309,7 +403,6 @@ void fn_updateMotor()
     //   Serial.print("Using PI-control, press c to change to P-control\n");
     //   command = 0;
     // }
-    
 
     // eStateTransition = fn_checkForTransition(command);
     if (bFltState == true)
@@ -362,8 +455,8 @@ void fn_updateMotor()
       i16Rps = Encoder.GetRpm();
 
       // Serial.print(">Rpm: ");
-      Serial.print(i16Rps);
-      Serial.print(" ");
+      // Serial.print(i16Rps);
+      // Serial.print(" ");
 
       speed_new = P_speed->update(targetRpm, static_cast<double>(i16Rps));
 
@@ -424,12 +517,13 @@ void loop()
 
   iResult = fn_checkForMsg(2000, &tMsg);
 
-  if(iResult > 0)
+  if (iResult > 0)
   {
-    fn_HandleMsg(tMsg);
+    // fn_HandleMsg(&tMsg);
+    fn_TransmitResponse(&tMsg);
   }
 
-  fn_updateMotor();
+  // fn_updateMotor();
 }
 
 // interupt service routine of external int0
@@ -451,7 +545,7 @@ ISR(TIMER2_COMPA_vect) // timer0 overflow interrupt
     ui8PpsCnt = 0;
     Encoder.updatePps();
   }
-    
+
   if (ui8SpeedCtrlCnt >= 50)
   {
     /* code to be exectued every 100 ms */
@@ -477,3 +571,29 @@ ISR(TIMER1_COMPB_vect)
 // {
 //   // SysTime.Inc_SysTimeMs();
 // }
+
+static uint16_t fn_rd_state()
+{
+}
+
+static uint16_t fn_rd_rpm()
+{
+  return Encoder.GetRpm();
+}
+
+static int fn_wr_state(uint16_t wr_val)
+{
+  return 1;
+}
+
+static int fn_wr_speed(uint16_t wr_val)
+{
+  int iRet = 1;
+  if ((wr_val < MAX_SPEED) && (wr_val > MIN_SPEED))
+  {
+    targetRpm = wr_val;
+    iRet = 0;
+  }
+
+  return iRet;
+}

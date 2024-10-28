@@ -25,6 +25,36 @@ void fn_swap16(uint16_t *val)
     *val = (tmp << 8 | *val >> 8);
 }
 
+// Compute the MODBUS RTU CRC
+uint16_t ModRTU_CRC(uint8_t buf[], int len)
+{
+   uint16_t crc = 0xFFFF;
+   for (int pos = 0; pos < len; pos++) 
+   {
+   crc ^= (uint16_t)buf[pos];
+      // XOR byte into least sig. byte of crc
+      for (int i = 8; i != 0; i--) 
+      {
+         if ((crc & 0x0001) != 0) 
+         {
+            crc >>= 1;
+            crc ^= 0xA001;
+         }
+         else
+         {
+            crc >>= 1;
+         }
+      }
+      // Loop over each bit
+      // If the LSB is set
+      // Shift right and XOR 0xA001
+      // Else LSB is not set
+      // Just shift right
+   }
+   // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
+   return crc;
+}
+
 int main(int argc, char *argv[]){
    int file, count;
 
@@ -53,7 +83,7 @@ int main(int argc, char *argv[]){
    tcflush(file, TCIFLUSH); // discard file information
    tcsetattr(file, TCSANOW, &options);
 
-   const size_t MSG_LEN = 8;
+   const size_t MSG_LEN = 6;
    uint8_t msg[MSG_LEN];
    uint8_t rd_msg[MSG_LEN];
    struct stMessage tMsg;
@@ -61,9 +91,19 @@ int main(int argc, char *argv[]){
    // populate the message with integer values in binary format
    tMsg.u8ID = (uint8_t)atoi(argv[1]);
    tMsg.u8Task = (uint8_t)atoi(argv[2]);
-   tMsg.u16Addr = (uint16_t)atoi(argv[3]);
-   tMsg.u16Msg = (uint16_t)atoi(argv[4]);
-   tMsg.u16Crc = 0x55AA;
+   tMsg.u16Addr = (uint16_t)atol(argv[3]);
+   tMsg.u16Msg = (uint16_t)atol(argv[4]);
+
+   msg[0] = tMsg.u8ID;
+   msg[1] = tMsg.u8Task;
+   msg[2] = (uint8_t)((tMsg.u16Addr & 0xFF00) >> 8);
+   msg[3] = (uint8_t)((tMsg.u16Addr & 0x00FF) >> 0);
+   msg[4] = (uint8_t)((tMsg.u16Msg & 0xFF00) >> 8);
+   msg[5] = (uint8_t)((tMsg.u16Msg & 0x00FF) >> 0);
+   
+   // from his notes: this number has low and high bytes swapped
+   // hopefully this doesn't explode in the future ^^ 
+   tMsg.u16Crc = ModRTU_CRC(msg, MSG_LEN);
 
    printf("Sent request: %02x %02x %04x %04x %04x\n", tMsg.u8ID, tMsg.u8Task, tMsg.u16Addr, tMsg.u16Msg, tMsg.u16Crc);
 
@@ -91,7 +131,7 @@ int main(int argc, char *argv[]){
    if (count==0) printf("There was no data available to read!\n");
    else {
       receive[count]=0;  //There is no null character sent by the Arduino
-      printf("The following was read in [%d]: %02x %02x %02x %02x %02x %02x %02x %02x\n",count, rd_msg[0], rd_msg[1],rd_msg[2], rd_msg[3],rd_msg[4], rd_msg[5],rd_msg[6], rd_msg[7]);
+      printf("The following was read in [%d]: %02x %02x %02x%02x %02x%02x %02x%02x\n",count, rd_msg[0], rd_msg[1],rd_msg[2], rd_msg[3],rd_msg[4], rd_msg[5],rd_msg[6], rd_msg[7]);
    }
 
    close(file);

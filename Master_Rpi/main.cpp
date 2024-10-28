@@ -5,8 +5,21 @@
 #include<stdio.h>
 #include<fcntl.h>
 #include<unistd.h>
-#include<termios.h>   // using the termios.h library
+#include<termios.h>
 
+
+// What I have to do:
+/**
+ * 
+ * Request for Sensor data cyclic
+ * Wait for Sensor data answer
+ * Interprete Sensor answer
+ * 
+ * Write Motor data
+ * Wait for response from Motor
+ * Interprete Motor data
+ * 
+ */
 
 struct stMessage
 {
@@ -17,48 +30,199 @@ struct stMessage
   uint16_t u16Crc;
 };
 
-uint16_t motorvalue;
-stMessage msg_to_motor;
-stMessage msg_from_sensor;
+static uint8_t ill_func = 0x01;
+static uint8_t ill_addr = 0x02;
+static uint8_t ill_data = 0x03;
+static uint8_t dev_fail = 0x04;
 
-
-uint32_t detChecksum()
+/** MODBUS FUNCTION  */
+void fn_swap16(uint16_t *val)
 {
-    return 0x23;
+    uint16_t tmp;
+    tmp = (*val & 0x00FF);
+    *val = (tmp << 8 | *val >> 8);
 }
 
-int encodeMessage(stMessage rec_msg)
+// Compute the MODBUS RTU CRC
+uint16_t ModRTU_CRC(uint8_t buf[], int len)
 {
-    uint32_t crc = detChecksum();
+   uint16_t crc = 0xFFFF;
+   for (int pos = 0; pos < len; pos++) 
+   {
+   crc ^= (uint16_t)buf[pos];
+      // XOR byte into least sig. byte of crc
+      for (int i = 8; i != 0; i--) 
+      {
+         if ((crc & 0x0001) != 0) 
+         {
+            crc >>= 1;
+            crc ^= 0xA001;
+         }
+         else
+         {
+            crc >>= 1;
+         }
+      }
+      // Loop over each bit
+      // If the LSB is set
+      // Shift right and XOR 0xA001
+      // Else LSB is not set
+      // Just shift right
+   }
+   // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
+   return crc;
+}
 
+int sendMessage(int argc, char *argv[])
+{
+   int file, count;
+
+   if(argc!=5){
+       printf("Invalid number of arguments, exiting [%d]!\n", argc);
+       return -2;
+   }
+   if ((file = open("/dev/ttyS0", O_RDWR | O_NOCTTY))<0) // remove O_NDELAY
+   {
+      perror("UART: Failed to open the file.\n");
+      return -1;
+   }
+
+   struct termios options;
+   tcgetattr(file, &options);
+   cfsetospeed(&options, B115200); // Set up the communication options: 115200 baud
+   cfmakeraw(&options); // set raw mode
+   options.c_cc[VMIN]=1; // min byte number of characters for raw mode
+   options.c_cc[VTIME] = 0;
+   tcflush(file, TCIFLUSH); // discard file information
+   tcsetattr(file, TCSANOW, &options);
+
+   const size_t MSG_LEN = 8;
+   uint8_t msg[MSG_LEN];
+   struct stMessage tMsg;
+
+   // populate the message with integer values in binary format
+   tMsg.u8ID = (uint8_t)atoi(argv[1]);
+   tMsg.u8Task = (uint8_t)atoi(argv[2]);
+   tMsg.u16Addr = (uint16_t)atol(argv[3]);
+   tMsg.u16Msg = (uint16_t)atol(argv[4]);
+
+   msg[0] = tMsg.u8ID;
+   msg[1] = tMsg.u8Task;
+   msg[2] = (uint8_t)((tMsg.u16Addr & 0xFF00) >> 8);
+   msg[3] = (uint8_t)((tMsg.u16Addr & 0x00FF) >> 0);
+   msg[4] = (uint8_t)((tMsg.u16Msg & 0xFF00) >> 8);
+   msg[5] = (uint8_t)((tMsg.u16Msg & 0x00FF) >> 0);
+   
+   // from his notes: this number has low and high bytes swapped
+   // hopefully this doesn't explode in the future ^^ 
+   tMsg.u16Crc = ModRTU_CRC(msg, 6);
+   // tMsg.u16Crc = 0x55aa;
+
+   printf("Sent request: %02x %02x %04x %04x %04x\n", tMsg.u8ID, tMsg.u8Task, tMsg.u16Addr, tMsg.u16Msg, tMsg.u16Crc);
+
+   fn_swap16(&tMsg.u16Addr);
+   fn_swap16(&tMsg.u16Msg);
+   fn_swap16(&tMsg.u16Crc);
+
+   // send the string plus the null character
+   if (count = write(file, (void*)&tMsg, 8)<0)
+   {
+      perror("Failed to write to the output\n");
+      return -1;
+   }
+   close(file);
+
+   return 0;
+}
+
+int recMessage(int argc, char *argv[], stMessage *rec_msg)
+{
+   int file, count;
+
+   if ((file = open("/dev/ttyS0", O_RDWR | O_NOCTTY))<0) // remove O_NDELAY
+   {
+      perror("UART: Failed to open the file.\n");
+      return -1;
+   }
+
+   struct termios options;
+   tcgetattr(file, &options);
+   cfsetospeed(&options, B115200); // Set up the communication options: 115200 baud
+   cfmakeraw(&options); // set raw mode
+   options.c_cc[VMIN]=1; // min byte number of characters for raw mode
+   options.c_cc[VTIME] = 0;
+   tcflush(file, TCIFLUSH); // discard file information
+   tcsetattr(file, TCSANOW, &options);
+
+   const size_t MSG_LEN = 8;
+   uint8_t rd_msg[MSG_LEN];
+
+   if ((count = read(file, rd_msg, sizeof(rd_msg)))<0)
+   {
+      perror("Failed to read from the input\n");
+      return -1;
+   }
+
+   // CRC check
+   uint16_t rd_crc = ModRTU_CRC(rd_msg, 6);
+
+   if (count==0) printf("There was no data available to read!\n");
+   else if(rd_crc != (uint16_t) ((((uint16_t)rd_msg[6])  << 8) | (uint16_t)rd_msg[7]))
+   {
+      printf("CRC Error, will not use message. Received: 0x%02x%02x Calculated: 0x%04x\n", rd_msg[6], rd_msg[7], rd_crc);
+   }
+   else {
+      printf("The following was read in [%d]: %02x %02x %02x%02x %02x%02x %02x%02x\n",count, rd_msg[0], rd_msg[1],rd_msg[2], rd_msg[3],rd_msg[4], rd_msg[5],rd_msg[6], rd_msg[7]);
+   }
+
+   close(file);
+   *rec_msg = rd_msg;
+   return 0;
+}
+
+
+void handleError(stMessage rec_mes)
+{
+    if(rec_mes[2] == ill_func) printf("Illegal Function\n");
+    else if(rec_mes[2] == ill_addr) printf("Illegal Data Address\n");
+    else if(rec_mes[2] == ill_data) printf("Illegal Data Value\n");
+    else if(rec_mes[2] == dev_fail) printf("Server Device Failure\n");
+    else{
+        printf("Unknown error value. Message: %d\n", rec_mes);
+    }
+}
+
+
+
+int encodeMessage(stMessage *rec_msg, uint16_t *sensor_value)
+{ 
     if(rec_msg.u8ID == 0x01) //Motor
     {
-        // No full error handling
         if((rec_msg.u8Task & 0xF0) == 0x80) 
         {
+            // TODO: Handle Error
             printf("Error writing motor values. Rec msg: %d\n", rec_msg);
+            handleError(*rec_msg);
             return -1;
         } // Error
-
-        // send and receive have to be the same
-        if(crc == rec_msg.u16Crc) 
-        {
-            printf("Motor values succ written: %d\n", rec_msg);
-            return 1;
-        } // Right Message
+        return 1;
 
     } else if (rec_msg.u8ID == 0x02) //Sensor
     {
-        // No full error handling
         if((rec_msg.u8Task & 0xF0) == 0x80)
         {
+            // TODO: Handle Error
             printf("Error rec sensor values. Rec msg: %d\n", rec_msg);
+            handleError(*rec_msg);
             return -1;
         } // Error
+
+        *sensor_value = (uint16_t) ((((uint16_t)rd_msg[4])  << 8) | (uint16_t)rd_msg[5]);
 
         // easy cheat: we define the message directly, not dependent on any other bit
         uint16_t rec_data = 0x0000;
 
+        return 1;
     }
 }
 
@@ -88,69 +252,9 @@ stMessage motorMessage(uint16_t reg, uint16_t data)
 }
 
 
-int sendTask(stMessage send_message)
-{
-    int fd, count;
-    // open device for writing not as controlling tty because we don't want to get killed if line noise sends CTRL-C.
-    if ((fd= open("/dev/ttyS0", O_WRONLY | O_NOCTTY))<0)
-    {
-        perror("UART: Failed to open the file.\n");
-        return -1;
-    }
-
-    struct termios options;       // the termios structure is vital
-    tcgetattr(fd, &options);    // sets the parameters for the file
-    // Set up the communication options:
-    cfsetospeed(&options, B19200);
-    // set raw mode
-    cfmakeraw(&options);
-    options.c_cc[VMIN]=16; // min byte number of characters for raw mode
-    options.c_cc[VTIME] = 0;
-    tcflush(fd, TCIFLUSH);            // discard file information
-    tcsetattr(fd, TCSANOW, &options); // changes occur immmediately
-
-
-
-    count = write(fd, &send_message, sizeof(send_message)); // transmit
-
-
-
-    if(count < 0)
-    {
-        perror("Failed to write to the output\n");
-        return -1;
-    }
-    printf("The following counter will be message [%d]: %d\n", count, send_message);
-
-    close(fd);
-
-    return 0;
-}
 
 int receiveTask()
 {
-    static int fd, count;
-    // Remove O_NDELAY to *wait* on serial read (blocking read) and not as controlling tty because we don't want to get killed if line noise sends CTRL-C.
-    if ((fd= open("/dev/ttyS0", O_RDONLY | O_NOCTTY))<0)
-    {
-        perror("UART: Failed to open the file.\n");
-        return -1;
-    }
-
-    struct termios options;       // the termios structure is vital
-    tcgetattr(fd, &options);    // sets the parameters for the file
-    // Set up the communication options:
-    cfsetispeed(&options, B57600);
-    // set raw mode
-    cfmakeraw(&options);
-    //options.c_cc[VMIN]=10; // min byte number of characters for raw mode -- min 10 but max 16
-    options.c_cc[VTIME] = 0;
-    tcflush(fd, TCIFLUSH);            // discard file information
-    tcsetattr(fd, TCSANOW, &options); // changes occur immmediately
-
-    
-
-    printf("Start reading counter\n");
     while (1)
     {
         stMessage received_message;
@@ -185,3 +289,5 @@ int main(void)
     
     return 0;
 }
+
+

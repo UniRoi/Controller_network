@@ -23,6 +23,13 @@ Messages are built up as follows:
  Message: Data  
  CRC: Calculated
 
+ Error codes:
+static uint8_t ill_func = 0x01;
+static uint8_t ill_addr = 0x02;
+static uint8_t ill_data = 0x03;
+static uint8_t dev_fail = 0x04;
+
+
 ## Part 2
 
 ### simulating crc error

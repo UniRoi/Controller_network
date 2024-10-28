@@ -103,8 +103,8 @@ int main(int argc, char *argv[]){
    
    // from his notes: this number has low and high bytes swapped
    // hopefully this doesn't explode in the future ^^ 
-   // tMsg.u16Crc = ModRTU_CRC(msg, MSG_LEN);
-   tMsg.u16Crc = 0x55aa;
+   tMsg.u16Crc = ModRTU_CRC(msg, MSG_LEN);
+   // tMsg.u16Crc = 0x55aa;
 
    printf("Sent request: %02x %02x %04x %04x %04x\n", tMsg.u8ID, tMsg.u8Task, tMsg.u16Addr, tMsg.u16Msg, tMsg.u16Crc);
 

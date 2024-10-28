@@ -38,9 +38,18 @@ static uint8_t dev_fail = 0x04;
 
 Message is ignored from Arduino
 
-Picture here
+
+![RPi_Wrong_CRC](./images/Network_wrong_crc_ignored_by_Arduino.PNG)
+CH1: RX line Arduino  
+CH2: TX line Arduino  
+Bus table: request was sent to write value 128 at address 1; Arduino does not respond to this valid message, because the CRC value is wrong
 
 #### Arduino is sending a wrong crc in the answer
+
+![Arduino_Wrong_CRC](./images/Network_wrong_crc_from_Arduino.PNG)
+CH1: RX line Arduino  
+CH2: TX line Arduino  
+Bus table: request was sent to write value 128 at address 1; Arduino responds with a wrong crc value  
 
 Print from linux terminal:
 
@@ -49,4 +58,26 @@ Print from linux terminal:
     CRC Error, will not use message. Received: 0xaada Calculated: 0xaad9
 
 
-Picture here
+## Part 3
+
+
+
+### Exceptions
+
+#### Illegal Data Address
+![Arduino_resp_ill_addr](./images/Network_Arduino_responds_w_ill_addr.PNG)
+CH1: RX line Arduino  
+CH2: TX line Arduino  
+Bus table: request was sent to write value 120 at address 1, Arduino responds with illegal data response message in the data field  
+
+#### Illegal Data Value
+![Arduino_resp_ill_data](./images/Network_Arduino_responds_w_ill_data.PNG)
+CH1: RX line Arduino  
+CH2: TX line Arduino  
+Bus table: request was sent to write value 120 at address 1, Arduino responds with illegal data response message in the data field  
+
+#### Illegal Function
+![Arduino_resp_ill_func](./images/Network_Arduino_responds_w_ill_func.PNG)
+CH1: RX line Arduino  
+CH2: TX line Arduino  
+Bus table: request was sent for function 4, Arduino responds with illegal function response message in the data field  

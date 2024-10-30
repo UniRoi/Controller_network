@@ -7,7 +7,7 @@ $$
 \frac{1}{19200\frac{bits}{s}}\cdot (8 \cdot 8 \cdot 2) bits = 0.006666 s \approx 0.007 s
 $$
 We round to 7 ms for having time for the bus idle.
-The sensor works as follows: A piece of paper spins around at a certain spot on the wheel everytime the wheel spins one time it will darken a lightsensitive Resistor. An Analog pin measures the voltage difference which appears when the resistor has no light an from that we can determine the spinning speed.
+The sensor works as follows: A piece of paper spins around at a certain spot on the wheel everytime the wheel spins one time it will darken a lightsensitive Resistor. An Analog pin measures the voltage difference which appears when the resistor has no light an from that we can determine the spinning speed. The test task is to compare the both sensore values the one of the sensor built into the motor and the lightsensitive sensor.
 
 ### Messages
 Messages are built up as follows: 

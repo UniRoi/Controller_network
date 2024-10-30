@@ -309,6 +309,7 @@ void fn_HandleMsg(struct stMessage *tMsg)
       if ((tMsg->u8Task == (uint8_t)E_READ) && (ProtocolFunktions[i].rd_fnc != nullptr))
       {
         bIllFunc = false;
+        bIllData = false;
         bFound = true;
         tMsg->u16Msg = ProtocolFunktions[i].rd_fnc();
       }
@@ -432,7 +433,7 @@ void loop()
 
 static uint16_t fn_rd_rpm()
 {
-  return (uint16_t)rpm;
+  return (uint16_t)(rpm*100);
 }
 
 

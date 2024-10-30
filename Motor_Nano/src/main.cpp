@@ -360,7 +360,8 @@ void fn_HandleMsg(struct stMessage *tMsg)
 
 
 
-void fn_updateMotor()
+void fn_updateMotor(void)
+// void loop()
 {
   uint32_t u32TimeNow = 0;
   eStates eStateTransition;
@@ -376,24 +377,24 @@ void fn_updateMotor()
 
   // send data only when you receive data:
 
-  bFltState = fn_IsEncInFault(u32TimeNow, EncFlt.is_lo());
-  eStateTransition = fn_checkForTransition(command);
+  // bFltState = fn_IsEncInFault(u32TimeNow, EncFlt.is_lo());
+  // eStateTransition = fn_checkForTransition(command);
 
   switch (controllerState)
   {
   case eStates::INIT:
     /* Init code */
-    dbg_print("Init\n");
+    // dbg_print("Init\n");
     command = 0;
     EncSlp.set_lo();
 
     led.set_lo();
     controllerState = eStates::PRE_OPERATIONAL;
-    Serial.print("Boot-up\n");
+    // Serial.print("Boot-up\n");
     break;
 
   case eStates::PRE_OPERATIONAL:
-    fn_PrintDbgMsg("pre_op\n", u32TimeNow);
+    // fn_PrintDbgMsg("pre_op\n", u32TimeNow);
     /* led blinks with 1 Hz */
     if ((u32TimeNow - u32LastTime) > 500)
     {
@@ -522,8 +523,8 @@ void fn_updateMotor()
       new_duty = (constrain(speed_new / targetRpm, 0.01, 0.99) * 100);
 
       // Serial.print("duty:");
-      Serial.print(new_duty);
-      Serial.println();
+      // Serial.print(new_duty);
+      // Serial.println();
 
       ana_out.set(new_duty);
       bUpdateSpeed = false;
@@ -544,7 +545,7 @@ void fn_updateMotor()
 
   default:
   case eStates::STOPPED:
-    fn_PrintDbgMsg("stopped\n", u32TimeNow);
+    // fn_PrintDbgMsg("stopped\n", u32TimeNow);
     EncSlp.set_lo();
     /* default / stopped code */
     /* led blinks with 2 Hz (250 ms for 2 Hz) */
@@ -582,7 +583,7 @@ void loop()
     fn_TransmitResponse(&tMsg);
   }
 
-  // fn_updateMotor();
+  fn_updateMotor();
 }
 
 // interupt service routine of external int0

@@ -6,12 +6,7 @@
 #include <Arduino.h>
 
 #include <avr/interrupt.h>
-#include <SoftwareSerial.h>
 
-#define pin_tx 9
-#define pin_rx 8
-
-SoftwareSerial mySerial(pin_rx, pin_tx);
 
 // #define DEBUG_PRINT // enable debug print messages
 #define NODE_ID 0x01
@@ -86,7 +81,7 @@ static uint16_t targetRpm = 10000;
 
 encoder Encoder(2, 3);
 Analog_out ana_out(1);
-Digital_out led(5);
+Digital_out led(5); // Pin D13
 Digital_out EncSlp(2);
 Digital_in EncFlt(4);
 
@@ -102,9 +97,6 @@ eStates controllerState = eStates::INIT;
 void setup()
 {
   // put your setup code here, to run once:
-
-  pinMode(pin_tx, OUTPUT);
-  pinMode(pin_rx, INPUT);
 
   bUpdateSpeed = false;
 
@@ -123,9 +115,9 @@ void setup()
 
   // Add serial for part 2
   Serial.begin(115200, SERIAL_8N1);
-  mySerial.begin(115200);
 
   u32LastTime = millis();
+  P_speed = new PI_control(m_fKp, m_fTi, 0.1, 12500, 1);
 }
 
 #ifdef DEBUG_PRINT
@@ -457,7 +449,7 @@ void fn_updateMotor()
     //   }
     // }
 
-    P_speed = new PI_control(m_fKp, m_fTi, 0.1, 12500, 1);
+    // P_speed = new PI_control(m_fKp, m_fTi, 0.1, 12500, 1);
 
     // if(command == 'c')
     // {

@@ -7,20 +7,6 @@
 #include<unistd.h>
 #include<termios.h>
 
-
-// What I have to do:
-/**
- * 
- * Request for Sensor data cyclic
- * Wait for Sensor data answer
- * Interprete Sensor answer
- * 
- * Write Motor data
- * Wait for response from Motor
- * Interprete Motor data
- * 
- */
-
 struct stMessage
 {
   uint8_t u8ID;
@@ -30,22 +16,37 @@ struct stMessage
   uint16_t u16Crc;
 };
 
+// Error codes
 static uint8_t ill_func = 0x01;
 static uint8_t ill_addr = 0x02;
 static uint8_t ill_data = 0x03;
 static uint8_t dev_fail = 0x04;
 
-
+// OP Set Modes of nodes
 static uint16_t set_op = 0x0001;
 static uint16_t stp_node = 0x0002;
 static uint16_t set_preop = 0x0080;
 static uint16_t rst_node = 0x0081;
 static uint16_t rst_comm = 0x0082;
 
+
+// OP Modes of nodes
+static uint8_t no_state = 0x00;
+static uint8_t operational = 0x01;
+static uint8_t stopped = 0x02;
+static uint8_t pre_operational = 0x80;
+static uint8_t init = 0x81;
+static uint8_t e_node_reset_com = 0x82;
+
+
+// different node ids
 static uint8_t motor_id = 0x01;
 static uint8_t sensor_id = 0x02;
 
-
+// Address
+static uint16_t motor_state_addr = 0x0001;
+static uint16_t motor_rpm_addr = 0x0005;
+static uint16_t sensor_rpm_addr = 0x0006;
 
 /** MODBUS FUNCTION  */
 void fn_swap16(uint16_t *val)
@@ -84,6 +85,7 @@ uint16_t ModRTU_CRC(uint8_t buf[], int len)
    // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
    return crc;
 }
+
 
 int sendMessage(stMessage send_msg)
 {
@@ -136,9 +138,6 @@ int sendMessage(stMessage send_msg)
    // hopefully this doesn't explode in the future ^^ 
 //    tMsg.u16Crc = ModRTU_CRC(msg, 6);
    // tMsg.u16Crc = 0x55aa;
-
-
-
 
    printf("Sent request: %02x %02x %04x %04x %04x\n", tMsg.u8ID, tMsg.u8Task, tMsg.u16Addr, tMsg.u16Msg, tMsg.u16Crc);
 
@@ -232,14 +231,14 @@ int encodeMessage(uint8_t *rec_msg, uint8_t *response)
                 return -1;
             } // Error
 
-        if((msg.u8Task & 0x0F) == 0x06 && msg.u16Addr == 0x0001)
+        if((msg.u8Task & 0x0F) == 0x06)
         {
             printf("Response Motor Value: %d\n", msg.u16Msg);
             *response = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
         } // Writing Task
-        else if ((msg.u8Task & 0x0F) == 0x03 && msg.u16Addr == 0x0000)
+        else if ((msg.u8Task & 0x0F) == 0x03)
         {
-            printf("Response Motor State: %d\n", msg.u16Msg);
+            printf("Response Motor: %d\n", msg.u16Msg);
             *response = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
         } // Reading Task
         else {
@@ -290,60 +289,75 @@ stMessage buildMessage(uint8_t id, uint8_t task, uint16_t addr, uint16_t data)
     uint8_t msg[6];
     msg[0] = id; 
     msg[1] = task; 
-    msg[2] = (addr >> 8) & 0xFF; // High byte
+    msg[2] = (addr >> 8) & 0xFF;
     msg[3] = addr & 0xFF;
-    msg[4] = (data >> 8) & 0xFF; // High byte
+    msg[4] = (data >> 8) & 0xFF;
     msg[5] = data & 0xFF;
     m_message.u16Crc = ModRTU_CRC(msg, 6);
 
     return m_message;
 }
 
+
+
 int main(void)
 {
-    uint8_t motorValue[2] = {0};
-    uint16_t set_motorValue = 0x0000;
+    uint8_t motor_rpm[2] = {0};
+    uint16_t set_motorValue = 10000;
     uint8_t received_message[8] = {0};
     uint8_t sensor_value[2] = {0};
     uint8_t motor_state[2] = {0};
+    uint8_t response[2] = {0};
+    uint8_t motor_state = no_state;
 
 
     while(true)
     {
+        // ask for motor state
+        sendMessage(buildMessage(motor_id, 0x03, motor_state_addr, 0x0001));
+        recMessage(received_message);
+
+        if(encodeMessage(received_message, response) > 0)
+        {
+            motor_state[0]  = response[0];
+            motor_state[1]  = response[1];
+            printf("Motor State: %04x\n", motor_state);
+        }        
+
         // Send Sensor Request   
-        sendMessage(buildMessage(sensor_id, 0x03, 0x0001, 0x0001));
-        // Wait for Sensor Response
+        sendMessage(buildMessage(sensor_id, 0x03, sensor_rpm_addr, 0x0001));
         recMessage(received_message);
-        int ret = encodeMessage(received_message, sensor_value);
 
-        if(ret >= 0)
+        if(encodeMessage(received_message, response) >= 0)
         {
-            // Interprete Sensor Data and then
-            // sensor_value can be used
-            // calculating new motor value
+            sensor_value[0]  = response[0];
+            sensor_value[1]  = response[1];
+            printf("Sensor RMP: %04x\n", sensor_value);
         }
 
-        // Send Motor Request for state
-        sendMessage(buildMessage(motor_id, 0x03, 0x0000, 0x0000));
-        recMessage(received_message);
-        ret = encodeMessage(received_message, motor_state);
-
-        if(ret >= 0)
+        if(motor_state == operational)
         {
-            // Interprete Motor state
-            // change motor state ........
+            // ask for motor RPM
+            sendMessage(buildMessage(motor_id, 0x03, motor_rpm_addr, 0x0001));
+            recMessage(received_message);
+
+            if(encodeMessage(received_message, response) > 0)
+            {
+                motor_rpm[0]  = response[0];
+                motor_rpm[1]  = response[1];
+                printf("Motor RMP is: %04x\n", motor_rpm);
+            }
+
+            // Send Motor Target RPM
+            sendMessage(buildMessage(motor_id, 0x06, motor_rpm_addr, set_motorValue));
+            recMessage(received_message);
+
+            if(encodeMessage(received_message, response) > 0)
+            {
+                printf("Motor data is set:%04x\n", response);
+            }
         }
 
-        // Send Motor Data
-        sendMessage(buildMessage(motor_id, 0x06, 0x0001, set_motorValue));
-        // Wait for Motor Response
-        recMessage(received_message);
-        ret = encodeMessage(received_message, motorValue);
-
-        if(ret > 0)
-        {
-            continue;
-        }
     }
     
     return 0;

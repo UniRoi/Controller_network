@@ -361,7 +361,6 @@ void fn_HandleMsg(struct stMessage *tMsg)
 
 
 void fn_updateMotor(void)
-// void loop()
 {
   uint32_t u32TimeNow = 0;
   eStates eStateTransition;
@@ -375,26 +374,20 @@ void fn_updateMotor(void)
 
   u32TimeNow = millis();
 
-  // send data only when you receive data:
-
-  // bFltState = fn_IsEncInFault(u32TimeNow, EncFlt.is_lo());
-  // eStateTransition = fn_checkForTransition(command);
 
   switch (controllerState)
   {
   case eStates::INIT:
     /* Init code */
-    // dbg_print("Init\n");
+
     command = 0;
     EncSlp.set_lo();
 
     led.set_lo();
     controllerState = eStates::PRE_OPERATIONAL;
-    // Serial.print("Boot-up\n");
     break;
 
   case eStates::PRE_OPERATIONAL:
-    // fn_PrintDbgMsg("pre_op\n", u32TimeNow);
     /* led blinks with 1 Hz */
     if ((u32TimeNow - u32LastTime) > 500)
     {
@@ -403,68 +396,7 @@ void fn_updateMotor(void)
     }
     EncSlp.set_lo();
 
-    // if (command == 'k')
-    // {
-    //   Serial.println("***");
-    //   Serial.print("Current value for Kp is: ");
-    //   Serial.println(m_fKp);
-    //   Serial.println("Now, send the new value from serial monitor, i.e. 0.06");
-    //   float newKp;
-    //   while (bResume == false)
-    //   {
-    //     if (Serial.available() > 0)
-    //     {
-    //       newKp = Serial.parseFloat();
-    //       if (newKp != 0)
-    //       {
-    //         Serial.print("New Kp value is: ");
-    //         Serial.println(newKp);
-    //         m_fKp = newKp;
-    //         bResume = true;
-    //         command = 0;
-    //       }
-    //     }
-    //   }
-    // }
-    // if (command == 't')
-    // {
-    //   Serial.println("***");
-    //   Serial.print("Current value for Ti is: ");
-    //   Serial.println(m_fTi);
-    //   Serial.println("Now, send the new value from serial monitor, i.e. 0.06");
-    //   float newTi;
-    //   while (bResume == false)
-    //   {
-    //     if (Serial.available() > 0)
-    //     {
-    //       newTi = Serial.parseFloat();
-    //       if (newTi != 0)
-    //       {
-    //         Serial.print("New Ti value is: ");
-    //         Serial.println(newTi);
-    //         m_fTi = newTi;
-    //         bResume = true;
-    //         command = 0;
-    //       }
-    //     }
-    //   }
-    // }
-
-    // P_speed = new PI_control(m_fKp, m_fTi, 0.1, 12500, 1);
-
-    // if(command == 'c')
-    // {
-    //   Serial.print("Using P-control, press v to change to PI-control\n");
-    //   P_speed = new P_control(m_fKp);
-    //   command = 0;
-    // }
-    // if(command == 'v')
-    // {
-    //   Serial.print("Using PI-control, press c to change to P-control\n");
-    //   command = 0;
-    // }
-
-    // eStateTransition = fn_checkForTransition(command);
+    
     if (bFltState == true)
     {
       controllerState = eStates::STOPPED;
@@ -480,51 +412,21 @@ void fn_updateMotor(void)
 
   case eStates::OPERATIONAL:
 
-    // fn_PrintDbgMsg("op\n", u32TimeNow);
+    
     /* led is on */
     led.set_hi();
     EncSlp.set_hi();
 
-    // if (command == 's')
-    // {
-    //   Serial.println("***");
-    //   Serial.print("Current value for TargetRpm is: ");
-    //   Serial.println(targetRpm);
-    //   Serial.println("Now, send the new value from serial monitor, i.e. 9050");
-    //   uint16_t newTargetRpm;
-    //   while (bResume == false)
-    //   {
-    //     if (Serial.available() > 0)
-    //     {
-    //       newTargetRpm = Serial.parseInt();
-    //       if (newTargetRpm != 0)
-    //       {
-    //         Serial.print("New TargetRpm value is: ");
-    //         Serial.println(newTargetRpm);
-    //         targetRpm = newTargetRpm;
-    //         bResume = true;
-    //         command = 0;
-    //       }
-    //     }
-    //   }
-    // }
+    
 
     if (bUpdateSpeed == true)
     {
       // TestPin.toggle();
       i16Rps = Encoder.GetRpm();
 
-      // Serial.print(">Rpm: ");
-      // Serial.print(i16Rps);
-      // Serial.print(" ");
-
       speed_new = P_speed->update(targetRpm, static_cast<double>(i16Rps));
 
       new_duty = (constrain(speed_new / targetRpm, 0.01, 0.99) * 100);
-
-      // Serial.print("duty:");
-      // Serial.print(new_duty);
-      // Serial.println();
 
       ana_out.set(new_duty);
       bUpdateSpeed = false;
@@ -545,7 +447,6 @@ void fn_updateMotor(void)
 
   default:
   case eStates::STOPPED:
-    // fn_PrintDbgMsg("stopped\n", u32TimeNow);
     EncSlp.set_lo();
     /* default / stopped code */
     /* led blinks with 2 Hz (250 ms for 2 Hz) */
@@ -627,10 +528,6 @@ ISR(TIMER1_COMPB_vect)
   ana_out.pin_out.set_lo();
 }
 
-// ISR(TIMER2_COMPA_vect) // timer2 overflow interrupt
-// {
-//   // SysTime.Inc_SysTimeMs();
-// }
 
 // ---------------------------------------------------------------------------------------
 // Supported Protocol functions

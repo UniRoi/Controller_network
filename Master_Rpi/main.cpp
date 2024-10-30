@@ -104,23 +104,29 @@ int sendMessage(stMessage send_msg)
 //    tMsg.u16Addr = (uint16_t)atol(argv[3]);
 //    tMsg.u16Msg = (uint16_t)atol(argv[4]);
 
-//    msg[0] = tMsg.u8ID;
-//    msg[1] = tMsg.u8Task;
-//    msg[2] = (uint8_t)((tMsg.u16Addr & 0xFF00) >> 8);
-//    msg[3] = (uint8_t)((tMsg.u16Addr & 0x00FF) >> 0);
-//    msg[4] = (uint8_t)((tMsg.u16Msg & 0xFF00) >> 8);
-//    msg[5] = (uint8_t)((tMsg.u16Msg & 0x00FF) >> 0);
+   tMsg.u8ID = send_msg.u8ID;
+   tMsg.u8Task = send_msg.u8Task;
+   tMsg.u16Addr = send_msg.u16Addr;
+   tMsg.u16Msg = send_msg.u16Msg;
+
+   uint8_t msg[6];
+
+   msg[0] = tMsg.u8ID;
+   msg[1] = tMsg.u8Task;
+   msg[2] = (uint8_t)((tMsg.u16Addr & 0xFF00) >> 8);
+   msg[3] = (uint8_t)((tMsg.u16Addr & 0x00FF) >> 0);
+   msg[4] = (uint8_t)((tMsg.u16Msg & 0xFF00) >> 8);
+   msg[5] = (uint8_t)((tMsg.u16Msg & 0x00FF) >> 0);
+   
+   tMsg.u16Crc = ModRTU_CRC(msg, 6);   
    
    // from his notes: this number has low and high bytes swapped
    // hopefully this doesn't explode in the future ^^ 
 //    tMsg.u16Crc = ModRTU_CRC(msg, 6);
    // tMsg.u16Crc = 0x55aa;
 
-   tMsg.u8ID = send_msg.u8ID;
-   tMsg.u8Task = send_msg.u8Task;
-   tMsg.u16Addr = send_msg.u16Addr;
-   tMsg.u16Msg = send_msg.u16Msg;
-   tMsg.u16Crc = ModRTU_CRC(send_msg, 6);
+
+
 
    printf("Sent request: %02x %02x %04x %04x %04x\n", tMsg.u8ID, tMsg.u8Task, tMsg.u16Addr, tMsg.u16Msg, tMsg.u16Crc);
 
@@ -139,7 +145,7 @@ int sendMessage(stMessage send_msg)
    return 0;
 }
 
-int recMessage(stMessage *rec_msg)
+int recMessage(uint8_t *rec_msg)
 {
    int file, count;
 
@@ -177,7 +183,7 @@ int recMessage(stMessage *rec_msg)
    }
    else {
       printf("The following was read in [%d]: %02x %02x %02x%02x %02x%02x %02x%02x\n",count, rd_msg[0], rd_msg[1],rd_msg[2], rd_msg[3],rd_msg[4], rd_msg[5],rd_msg[6], rd_msg[7]);
-      *rec_msg = rd_msg;
+      rec_msg = rd_msg;
    }
 
    close(file);
@@ -188,24 +194,31 @@ int recMessage(stMessage *rec_msg)
 
 void handleError(stMessage rec_mes)
 {
-    if(rec_mes[2] == ill_func) printf("Illegal Function\n");
-    else if(rec_mes[2] == ill_addr) printf("Illegal Data Address\n");
-    else if(rec_mes[2] == ill_data) printf("Illegal Data Value\n");
-    else if(rec_mes[2] == dev_fail) printf("Server Device Failure\n");
+    if(rec_mes.u8Task == ill_func) printf("Illegal Function\n");
+    else if(rec_mes.u8Task == ill_addr) printf("Illegal Data Address\n");
+    else if(rec_mes.u8Task == ill_data) printf("Illegal Data Value\n");
+    else if(rec_mes.u8Task == dev_fail) printf("Server Device Failure\n");
     else{
         printf("Unknown error value. Message: %d\n", rec_mes);
     }
 }
 
-int encodeMessage(stMessage *rec_msg, uint16_t *sensor_value)
+int encodeMessage(uint8_t *rec_msg, uint8_t *sensor_value)
 { 
-    if(rec_msg.u8ID == 0x01) //Motor
+    stMessage msg;
+    msg.u8ID = rec_msg[0];
+    msg.u8Task = rec_msg[1];
+    msg.u16Addr = (uint16_t) ((((uint16_t)rec_msg[2])  << 8) | (uint16_t)rec_msg[3]);
+    msg.u16Msg = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);;
+
+    
+    if(msg.u8ID == 0x01) //Motor
     {
-        if((rec_msg.u8Task & 0xF0) == 0x80) 
+        if((msg.u8Task & 0xF0) == 0x80) 
         {
             // TODO: Handle Error
             printf("Error writing motor values. Rec msg: %d\n", rec_msg);
-            handleError(rec_msg);
+            handleError(msg);
             return -1;
         } // Error
         else{
@@ -213,18 +226,18 @@ int encodeMessage(stMessage *rec_msg, uint16_t *sensor_value)
         }
         return 1;
 
-    } else if (rec_msg.u8ID == 0x02) //Sensor
+    } else if (msg.u8ID == 0x02) //Sensor
     {
-        if((rec_msg.u8Task & 0xF0) == 0x80)
+        if((msg.u8Task & 0xF0) == 0x80)
         {
             printf("Error rec sensor values. Rec msg: %d\n", rec_msg);
-            handleError(rec_msg);
+            handleError(msg);
             return -1;
         } // Error
 
-        if((rec_msg.u8Task & 0x0F) == 0x03)
+        if((msg.u8Task & 0x0F) == 0x03)
         {
-            *sensor_value = (uint16_t) ((((uint16_t)rd_msg[4])  << 8) | (uint16_t)rd_msg[5]);
+            *sensor_value = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
         } // Reading Task
         else {
             printf("Wrong Task code. Rec msg: %d\n", rec_msg);
@@ -232,6 +245,7 @@ int encodeMessage(stMessage *rec_msg, uint16_t *sensor_value)
         }
         return 1;
     }
+    return 0;
 }
 
 
@@ -250,12 +264,13 @@ int encodeMessage(stMessage *rec_msg, uint16_t *sensor_value)
 
 int main(void)
 {
-    stMessage req_sensor = 0x02 0x03 0x0001 0x0001 0xFFFF; // initial sensor Message
-    stMessage write_motor = 0x01 0x06 0x0001 0x0001 0xFFFF; // initial motor Message
+    stMessage req_sensor; //= 0x02 0x03 0x0001 0x0001 0xFFFF; // initial sensor Message
+    stMessage write_motor; //= 0x01 0x06 0x0001 0x0001 0xFFFF; // initial motor Message
 
-    stMessage *received_message;
+    uint8_t received_message[8] = {0};
+
     uint16_t motorValue;
-    uint16_t *sensorValue;
+    uint8_t sensor_value[2] = {0};
 
     while(true)
     {
@@ -263,12 +278,12 @@ int main(void)
         sendMessage(req_sensor);
         // Wait for Sensor Response
         recMessage(received_message);
-        int ret = encodeMessage(received_message, sensorValue);
+        int ret = encodeMessage(received_message, sensor_value);
 
         if(ret > 0)
         {
             // Interprete Sensor Data and then
-            motorValue = received_message->u16Msg;
+            motorValue = (uint16_t) ((((uint16_t)received_message[4])  << 8) | (uint16_t)received_message[5]);
         }
 
         // Send Motor Data
@@ -276,7 +291,7 @@ int main(void)
         sendMessage(write_motor);
         // Wait for Motor Response
         recMessage(received_message);
-        int ret = encodeMessage(received_message, sensorValue);
+        ret = encodeMessage(received_message, sensor_value);
 
         if(ret > 0)
         {
@@ -284,7 +299,6 @@ int main(void)
             continue;
         }
     }
-    
     
     return 0;
 }

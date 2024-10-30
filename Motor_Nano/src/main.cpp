@@ -335,6 +335,7 @@ void fn_HandleMsg(struct stMessage *tMsg)
       if ((tMsg->u8Task == (uint8_t)E_READ) && (ProtocolFunktions[i].rd_fnc != nullptr))
       {
         bIllFunc = false;
+        bIllData = false;
         bFound = true;
         tMsg->u16Msg = ProtocolFunktions[i].rd_fnc();
       }
@@ -645,6 +646,7 @@ ISR(TIMER1_COMPB_vect)
 
 static uint16_t fn_rd_state()
 {
+  return (uint16_t)controllerState;
 }
 
 static uint16_t fn_rd_rpm()

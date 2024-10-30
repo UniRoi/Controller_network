@@ -35,6 +35,18 @@ static uint8_t ill_addr = 0x02;
 static uint8_t ill_data = 0x03;
 static uint8_t dev_fail = 0x04;
 
+
+static uint16_t set_op = 0x0001;
+static uint16_t stp_node = 0x0002;
+static uint16_t set_preop = 0x0080;
+static uint16_t rst_node = 0x0081;
+static uint16_t rst_comm = 0x0082;
+
+static uint8_t motor_id = 0x01;
+static uint8_t sensor_id = 0x02;
+
+
+
 /** MODBUS FUNCTION  */
 void fn_swap16(uint16_t *val)
 {
@@ -203,7 +215,7 @@ void handleError(stMessage rec_mes)
     }
 }
 
-int encodeMessage(uint8_t *rec_msg, uint8_t *sensor_value)
+int encodeMessage(uint8_t *rec_msg, uint8_t *response)
 { 
     stMessage msg;
     msg.u8ID = rec_msg[0];
@@ -212,21 +224,32 @@ int encodeMessage(uint8_t *rec_msg, uint8_t *sensor_value)
     msg.u16Msg = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);;
 
     
-    if(msg.u8ID == 0x01) //Motor
+    if(msg.u8ID == motor_id) //Motor
     {
-        if((msg.u8Task & 0xF0) == 0x80) 
+        if((msg.u8Task & 0xF0) == 0x80)
+            {
+                printf("Error rec motor values. Rec msg: %d\n", rec_msg);
+                handleError(msg);
+                return -1;
+            } // Error
+
+        if((msg.u8Task & 0x0F) == 0x06 && msg.u16Addr == 0x0001)
         {
-            // TODO: Handle Error
-            printf("Error writing motor values. Rec msg: %d\n", rec_msg);
-            handleError(msg);
+            printf("Response Motor Value: %d\n", msg.u16Msg);
+            *response = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
+        } // Writing Task
+        else if ((msg.u8Task & 0x0F) == 0x03 && msg.u16Addr == 0x0000)
+        {
+            printf("Response Motor State: %d\n", msg.u16Msg);
+            *response = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
+        } // Reading Task
+        else {
+            printf("Wrong Task code. Rec msg: %d\n", rec_msg);
             return -1;
-        } // Error
-        else{
-            printf("Data successfully written\n");
         }
         return 1;
-
-    } else if (msg.u8ID == 0x02) //Sensor
+    } 
+    else if (msg.u8ID == sensor_id) //Sensor
     {
         if((msg.u8Task & 0xF0) == 0x80)
         {
@@ -237,7 +260,8 @@ int encodeMessage(uint8_t *rec_msg, uint8_t *sensor_value)
 
         if((msg.u8Task & 0x0F) == 0x03)
         {
-            *sensor_value = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
+            printf("Response Sensor Value: %d\n", msg.u16Msg);
+            *response = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
         } // Reading Task
         else {
             printf("Wrong Task code. Rec msg: %d\n", rec_msg);
@@ -250,69 +274,78 @@ int encodeMessage(uint8_t *rec_msg, uint8_t *sensor_value)
 
 
 // // write Motor data
-stMessage motorMessage(uint16_t data)
+stMessage buildMessage(uint8_t id, uint8_t task, uint16_t addr, uint16_t data)
 {
-    stMessage m_motor_message;
-    m_motor_message.u8ID = 0x01; // 01 for Motor
-    m_motor_message.u8Task = 0x06; // 03 for write
-    m_motor_message.u16Addr = 0x0001; // register
-    m_motor_message.u16Msg = data;
-    m_motor_message.u16Crc = 0xFFFF;
-    return m_motor_message;
-}
+    stMessage m_message;
+    m_message.u8ID = id; 
+    m_message.u8Task = task; 
+    m_message.u16Addr = addr; 
+    m_message.u16Msg = data;
 
-// // write Motor data
-stMessage sensorMessage()
-{
-    stMessage m_sensor_message;
-    m_sensor_message.u8ID = 0x02; // 02 for Sensor
-    m_sensor_message.u8Task = 0x03; // 03 for read
-    m_sensor_message.u16Addr = 0x0001; // register
-    m_sensor_message.u16Msg = 0x0001;
-    m_sensor_message.u16Crc = 0xFFFF;
-    return m_sensor_message;
-}
 
+    uint8_t msg[6];
+    msg[0] = id; 
+    msg[1] = task; 
+    msg[2] = (addr >> 8) & 0xFF; // High byte
+    msg[3] = addr & 0xFF;
+    msg[4] = (data >> 8) & 0xFF; // High byte
+    msg[5] = data & 0xFF;
+    m_message.u16Crc = ModRTU_CRC(msg, 6);
+
+    return m_message;
+}
 
 int main(void)
 {
-    stMessage req_sensor = sensorMessage(); //= 0x02 0x03 0x0001 0x0001 0xFFFF; // initial sensor Message
-    stMessage write_motor = motorMessage(0x0000); //= 0x01 0x06 0x0001 0x0001 0xFFFF; // initial motor Message
-
+    uint8_t motorValue[2] = {0};
+    uint16_t set_motorValue = 0x0000;
     uint8_t received_message[8] = {0};
-
-    uint16_t motorValue;
     uint8_t sensor_value[2] = {0};
+    uint8_t motor_state[2] = {0};
+
 
     while(true)
     {
         // Send Sensor Request   
-        sendMessage(req_sensor);
+        sendMessage(buildMessage(sensor_id, 0x03, 0x0001, 0x0001));
         // Wait for Sensor Response
         recMessage(received_message);
         int ret = encodeMessage(received_message, sensor_value);
 
-        if(ret > 0)
+        if(ret >= 0)
         {
             // Interprete Sensor Data and then
-            motorValue = (uint16_t) ((((uint16_t)received_message[4])  << 8) | (uint16_t)received_message[5]);
+            // sensor_value can be used
+            // calculating new motor value
+        }
+
+        // Send Motor Request for state
+        sendMessage(buildMessage(motor_id, 0x03, 0x0000, 0x0000));
+        recMessage(received_message);
+        ret = encodeMessage(received_message, motor_state);
+
+        if(ret >= 0)
+        {
+            // Interprete Motor state
+            // change motor state ........
         }
 
         // Send Motor Data
-        write_motor.u16Msg = motorValue;
-        sendMessage(write_motor);
+        sendMessage(buildMessage(motor_id, 0x06, 0x0001, set_motorValue));
         // Wait for Motor Response
         recMessage(received_message);
-        ret = encodeMessage(received_message, sensor_value);
+        ret = encodeMessage(received_message, motorValue);
 
         if(ret > 0)
         {
-            // Message from Motor was okay
             continue;
         }
     }
     
     return 0;
 }
+
+// g++ -o controller main.cpp 
+// ./controller
 
 

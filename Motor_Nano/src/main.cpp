@@ -80,10 +80,10 @@ static int command = 0;
 static uint16_t targetRpm = 10000;
 
 encoder Encoder(2, 3);
-Analog_out ana_out(1);
+Analog_out ana_out(1); // Pin D9
 Digital_out led(5); // Pin D13
-Digital_out EncSlp(2);
-Digital_in EncFlt(4);
+Digital_out EncSlp(2); // Pin D10
+Digital_in EncFlt(4); // Pin D4
 
 // Digital_out TestPin(3); // output only for testing
 
@@ -127,36 +127,6 @@ void setup()
 #define dbg_print(...) /**/
 #endif
 
-enum eStates fn_checkForTransition(int cmd)
-{
-  enum eStates Transition = NO_STATE;
-
-  if (cmd == 'o')
-  {
-    Transition = eStates::OPERATIONAL;
-  }
-  else if (cmd == 'p')
-  {
-    Transition = eStates::PRE_OPERATIONAL;
-  }
-  else if (cmd == 'r')
-  {
-    Transition = eStates::INIT;
-  }
-
-  return Transition;
-}
-
-void fn_PrintDbgMsg(const char *msg, uint32_t TimeNow)
-{
-  static uint32_t LastTime = 0;
-
-  if ((TimeNow - LastTime) > 500)
-  {
-    dbg_print(msg);
-    LastTime = TimeNow;
-  }
-}
 
 bool fn_IsEncInFault(uint32_t TimeNow, bool bFltLogic)
 {
@@ -373,7 +343,7 @@ void fn_updateMotor(void)
   double speed_new = 0;
 
   u32TimeNow = millis();
-
+  // bFltState = fn_IsEncInFault(u32TimeNow, EncFlt.is_lo());
 
   switch (controllerState)
   {

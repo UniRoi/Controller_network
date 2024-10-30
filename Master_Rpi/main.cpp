@@ -221,9 +221,8 @@ int encodeMessage(uint8_t *rec_msg, uint8_t *response)
     msg.u8ID = rec_msg[0];
     msg.u8Task = rec_msg[1];
     msg.u16Addr = (uint16_t) ((((uint16_t)rec_msg[2])  << 8) | (uint16_t)rec_msg[3]);
-    msg.u16Msg = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);;
-
-    
+    msg.u16Msg = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
+  
     if(msg.u8ID == motor_id) //Motor
     {
         if((msg.u8Task & 0xF0) == 0x80)
@@ -258,11 +257,16 @@ int encodeMessage(uint8_t *rec_msg, uint8_t *response)
             return -1;
         } // Error
 
-        if((msg.u8Task & 0x0F) == 0x03)
+        if((msg.u8Task & 0x0F) == 0x03 && msg.u16Addr == 0x0001)
         {
             printf("Response Sensor Value: %d\n", msg.u16Msg);
             *response = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
         } // Reading Task
+        else if((msg.u8Task & 0x0F) == 0x03 && msg.u16Addr == 0x0001)
+        {
+            printf("Response Sensor State: %d\n", msg.u16Msg);
+            *response = (uint16_t) ((((uint16_t)rec_msg[4])  << 8) | (uint16_t)rec_msg[5]);
+        } 
         else {
             printf("Wrong Task code. Rec msg: %d\n", rec_msg);
             return -1;

@@ -250,22 +250,34 @@ int encodeMessage(uint8_t *rec_msg, uint8_t *sensor_value)
 
 
 // // write Motor data
-// stMessage motorMessage(uint16_t reg, uint16_t data)
-// {
-//     stMessage m_motor_message;
-//     m_motor_message.u8ID = 0x01; // 01 for Motor
-//     m_motor_message.u8Task = 0x06; // 03 for write
-//     m_motor_message.u16Addr = reg; // register
-//     m_motor_message.u16Msg = data;
-//     m_motor_message.u16Crc = detChecksum();
-//     return m_motor_message;
-// }
+stMessage motorMessage(uint16_t data)
+{
+    stMessage m_motor_message;
+    m_motor_message.u8ID = 0x01; // 01 for Motor
+    m_motor_message.u8Task = 0x06; // 03 for write
+    m_motor_message.u16Addr = 0x0001; // register
+    m_motor_message.u16Msg = data;
+    m_motor_message.u16Crc = 0xFFFF;
+    return m_motor_message;
+}
+
+// // write Motor data
+stMessage sensorMessage()
+{
+    stMessage m_sensor_message;
+    m_sensor_message.u8ID = 0x02; // 02 for Sensor
+    m_sensor_message.u8Task = 0x03; // 03 for read
+    m_sensor_message.u16Addr = 0x0001; // register
+    m_sensor_message.u16Msg = 0x0001;
+    m_sensor_message.u16Crc = 0xFFFF;
+    return m_sensor_message;
+}
 
 
 int main(void)
 {
-    stMessage req_sensor; //= 0x02 0x03 0x0001 0x0001 0xFFFF; // initial sensor Message
-    stMessage write_motor; //= 0x01 0x06 0x0001 0x0001 0xFFFF; // initial motor Message
+    stMessage req_sensor = sensorMessage(); //= 0x02 0x03 0x0001 0x0001 0xFFFF; // initial sensor Message
+    stMessage write_motor = motorMessage(0x0000); //= 0x01 0x06 0x0001 0x0001 0xFFFF; // initial motor Message
 
     uint8_t received_message[8] = {0};
 

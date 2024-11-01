@@ -94,6 +94,11 @@ Controller *P_speed = nullptr;
 
 eStates controllerState = eStates::INIT;
 
+void setup_serial(void)
+{
+  Serial.begin(115200, SERIAL_8N1);
+}
+
 void setup()
 {
   // put your setup code here, to run once:
@@ -114,7 +119,7 @@ void setup()
   sei();
 
   // Add serial for part 2
-  Serial.begin(115200, SERIAL_8N1);
+  setup_serial();
 
   u32LastTime = millis();
   P_speed = new PI_control(m_fKp, m_fTi, 0.1, 12500, 1);
@@ -343,7 +348,7 @@ void fn_updateMotor(void)
   double speed_new = 0;
 
   u32TimeNow = millis();
-  // bFltState = fn_IsEncInFault(u32TimeNow, EncFlt.is_lo());
+  bFltState = fn_IsEncInFault(u32TimeNow, EncFlt.is_lo());
 
   switch (controllerState)
   {
@@ -413,6 +418,13 @@ void fn_updateMotor(void)
       command = 0;
     }
 
+    break;
+
+    case eStates::E_NODE_RESET_COM:
+      Serial.end();
+      delay(3);
+      setup_serial();
+      controllerState = eStates::INIT;
     break;
 
   default:

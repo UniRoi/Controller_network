@@ -314,27 +314,32 @@ int main(void)
     while(true)
     {
         // ask for motor state
-        sendMessage(buildMessage(motor_id, 0x03, motor_state_addr, 0x0001));
-        recMessage(received_message);
-
-        if(encodeMessage(received_message, response) > 0)
+        while(motor_state != operational)
         {
-            motor_state[0]  = response[0];
-            motor_state[1]  = response[1];
-            printf("Motor State: %04x\n", motor_state);
-        }        
+            sendMessage(buildMessage(motor_id, 0x03, motor_state_addr, 0x0001));
+            recMessage(received_message);
 
-        // Send Sensor Request   
-        sendMessage(buildMessage(sensor_id, 0x03, sensor_rpm_addr, 0x0001));
-        recMessage(received_message);
+            if(encodeMessage(received_message, response) > 0)
+            {
+                motor_state[0]  = response[0];
+                motor_state[1]  = response[1];
+                printf("Motor State: %04x\n", motor_state);
+            }   
 
-        if(encodeMessage(received_message, response) >= 0)
-        {
-            sensor_value[0]  = response[0];
-            sensor_value[1]  = response[1];
-            printf("Sensor RMP: %04x\n", sensor_value);
+            if(motor_state == pre_operational)
+            {
+                sendMessage(buildMessage(motor_id, 0x06, motor_state_addr, set_op));
+                recMessage(received_message);
+                if(encodeMessage(received_message, response) > 0)
+                {
+                    motor_state[0]  = response[0];
+                    motor_state[1]  = response[1];
+                    printf("Motor State: %04x\n", motor_state);
+                }   
+            }     
         }
 
+        // Motor in OP Mode
         if(motor_state == operational)
         {
             // ask for motor RPM
@@ -356,7 +361,20 @@ int main(void)
             {
                 printf("Motor data is set:%04x\n", response);
             }
+        }  
+        
+        // Send Sensor Request   
+        sendMessage(buildMessage(sensor_id, 0x03, sensor_rpm_addr, 0x0001));
+        recMessage(received_message);
+
+        if(encodeMessage(received_message, response) >= 0)
+        {
+            sensor_value[0]  = response[0];
+            sensor_value[1]  = response[1];
+            printf("Sensor RMP: %04x\n", sensor_value);
         }
+
+        
 
     }
     

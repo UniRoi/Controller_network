@@ -1,12 +1,12 @@
 # Controller Network
 ## Part 1
-For the calculation of the minimal response time we use the Baudrate from the lecture of Modbus RTU which is 19200 bits per second. For the message we use 8 Bytes per message. Well need a request and a response until we can update so the formula is:
+For the calculation of the minimal response time we use the Baudrate from the lecture of Modbus RTU which is 115200 bits per second. For the message we use 8 Bytes per message. Well need a request and a response until we can update so the formula is:
 
 
 $$
-\frac{1}{19200\frac{bits}{s}}\cdot (8 \cdot 8 \cdot 2) bits = 0.006666 s \approx 0.007 s
+\frac{1}{115200\frac{bits}{s}}\cdot (8 \cdot 8 \cdot 2) bits = 0.00006944 s \approx 0.00007 s = 70 us
 $$
-We round to 7 ms for having time for the bus idle.
+We round to 70 us for having time for the bus idle.
 The sensor works as follows: A piece of paper spins around at a certain spot on the wheel everytime the wheel spins one time it will darken a lightsensitive Resistor. An Analog pin measures the voltage difference which appears when the resistor has no light an from that we can determine the spinning speed. The test task is to compare the both sensore values the one of the sensor built into the motor and the lightsensitive sensor.
 
 ### Messages

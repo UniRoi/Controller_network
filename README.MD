@@ -24,14 +24,21 @@ Messages are built up as follows:
  Message: Data  
  CRC: Calculated
 
- Error codes:
-static uint8_t ill_func = 0x01;
-static uint8_t ill_addr = 0x02;
-static uint8_t ill_data = 0x03;
-static uint8_t dev_fail = 0x04;
+Error codes are directly taken from the modbus RTU protocol:  
+illegal_func = 0x01  
+illegal_addr = 0x02  
+illegal_data = 0x03  
+device_fail = 0x04  
 
+### Protocol difference
+For transmitting errors, the protocol does not comply with the official modbus protocol. For simplicity it was decided to only use 8 byte messages. 
+
+The developed protocol is transmitting the error code in the message field, and it also sets the highes bit in the task id byte. The address field will be not changed and the crc is calculated as usual for the transmitted values. Examples screenshots from the oscilloscope can be seen in [Part 3](#exceptions).
 
 ## Part 2
+
+### Testing 
+For testing the serial communication, the code from Assignment 5.2 was used.
 
 ### simulating crc error
 
@@ -84,7 +91,7 @@ CH2: TX line Arduino
 Bus table: request was sent for function 4, Arduino responds with illegal function response message in the data field.
 
 ### systemd
-With the systemd file controller.service the programm main.cpp starts automatically when the rapberry is booting.
+With the systemd file controller.service the programm main.cpp starts automatically when the raspberry is booting.
 
 ### print
 In the printOut.txt is a sample output of the programm. It shows the status change of the motor in the beginning and prints the calculated RPM of the Motor and the Sensor value. 

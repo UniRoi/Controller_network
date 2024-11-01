@@ -1,0 +1,14 @@
+[Unit]
+Description=Controller       
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/controller   
+Restart=always
+User=tobias       
+WorkingDirectory=/usr/local/bin/             
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target     

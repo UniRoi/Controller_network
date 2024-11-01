@@ -1,0 +1,420 @@
+Sent request: 01 03 0001 0000 0a14
+The following was read in [8]: 01 03 0001 0001 cad5
+Response Motor: 1
+Motor State: 0001
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 2681 cb8f
+Response Motor: 9857
+Motor RMP is: 0026
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2613 55fe
+Response Sensor Value: 9747
+Sensor RPM: 26 13
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 282d d68b
+Response Motor: 10285
+Motor RMP is: 0028
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 267c 79be
+Response Sensor Value: 9852
+Sensor RPM: 26 7c
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2749 fe7f
+Response Sensor Value: 10057
+Sensor RPM: 27 49
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 282d d68b
+Response Motor: 10285
+Motor RMP is: 0028
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 26cc cdbf
+Response Sensor Value: 9932
+Sensor RPM: 26 cc
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 2681 cb8f
+Response Motor: 9857
+Motor RMP is: 0026
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2665 b37f
+Response Sensor Value: 9829
+Sensor RPM: 26 65
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 26ad 257e
+Response Sensor Value: 9901
+Sensor RPM: 26 ad
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 2681 cb8f
+Response Motor: 9857
+Motor RMP is: 0026
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2650 a4bf
+Response Sensor Value: 9808
+Sensor RPM: 26 50
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 26a0 e0bf
+Response Sensor Value: 9888
+Sensor RPM: 26 a0
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 282d d68b
+Response Motor: 10285
+Motor RMP is: 0028
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2648 aebf
+Response Sensor Value: 9800
+Sensor RPM: 26 48
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 29da c0cb
+Response Motor: 10714
+Motor RMP is: 0029
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 272b 17fe
+Response Sensor Value: 10027
+Sensor RPM: 27 2b
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 267f 78fe
+Response Sensor Value: 9855
+Sensor RPM: 26 7f
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 2681 cb8f
+Response Motor: 9857
+Motor RMP is: 0026
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2640 68be
+Response Sensor Value: 9792
+Sensor RPM: 26 40
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 282d d68b
+Response Motor: 10285
+Motor RMP is: 0028
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2697 36fe
+Response Sensor Value: 9879
+Sensor RPM: 26 97
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 2681 cb8f
+Response Motor: 9857
+Motor RMP is: 0026
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 26c9 ce7f
+Response Sensor Value: 9929
+Sensor RPM: 26 c9
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 26e6 123e
+Response Sensor Value: 9958
+Sensor RPM: 26 e6
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 282d d68b
+Response Motor: 10285
+Motor RMP is: 0028
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 25f3 2dff
+Response Sensor Value: 9715
+Sensor RPM: 25 f3
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2695 f77f
+Response Sensor Value: 9877
+Sensor RPM: 26 95
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 282d d68b
+Response Motor: 10285
+Motor RMP is: 0028
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 26b8 eabf
+Response Sensor Value: 9912
+Sensor RPM: 26 b8
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 2681 cb8f
+Response Motor: 9857
+Motor RMP is: 0026
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2657 66fe
+Response Sensor Value: 9815
+Sensor RPM: 26 57
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 282d d68b
+Response Motor: 10285
+Motor RMP is: 0028
+Sent request: 01 06 0009 1388 9e54
+The following was read in [8]: 01 06 0009 1388 9e54
+Response Motor Value: 5000
+Motor data is set:1388
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 261d 917f
+Response Sensor Value: 9757
+Sensor RPM: 26 1d
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 217b b80d
+Response Motor: 8571
+Motor RMP is: 0021
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2682 f93f
+Response Sensor Value: 9858
+Sensor RPM: 26 82
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 1c75 ec9c
+Response Motor: 7285
+Motor RMP is: 001c
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 22ab e7fc
+Response Sensor Value: 8875
+Sensor RPM: 22 ab
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 1c75 ec9c
+Response Motor: 7285
+Motor RMP is: 001c
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1ec8 cead
+Response Sensor Value: 7880
+Sensor RPM: 1e c8
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 126a 44d9
+Response Motor: 4714
+Motor RMP is: 0012
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1ed7 06ec
+Response Sensor Value: 7895
+Sensor RPM: 1e d7
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 1ac9 fd9e
+Response Motor: 6857
+Motor RMP is: 001a
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1bc1 986e
+Response Sensor Value: 7105
+Sensor RPM: 1b c1
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 10bd 7a98
+Response Motor: 4285
+Motor RMP is: 0010
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 19c3 39ee
+Response Sensor Value: 6595
+Sensor RPM: 19 c3
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 10bd 7a98
+Response Motor: 4285
+Motor RMP is: 0010
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 19c3 39ee
+Response Sensor Value: 6595
+Sensor RPM: 19 c3
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 126a 44d9
+Response Motor: 4714
+Motor RMP is: 0012
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 183e 282e
+Response Sensor Value: 6206
+Sensor RPM: 18 3e
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 10bd 7a98
+Response Motor: 4285
+Motor RMP is: 0010
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 181b f3ef
+Response Sensor Value: 6171
+Sensor RPM: 18 1b
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 15c3 0a1b
+Response Motor: 5571
+Motor RMP is: 0015
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 181b f3ef
+Response Sensor Value: 6171
+Sensor RPM: 18 1b
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 0f11 3790
+Response Motor: 3857
+Motor RMP is: 000f
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 16a0 e0ab
+Response Sensor Value: 5792
+Sensor RPM: 16 a0
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 0f11 3790
+Response Motor: 3857
+Motor RMP is: 000f
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 16c6 ca2b
+Response Sensor Value: 5830
+Sensor RPM: 16 c6
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 126a 44d9
+Response Motor: 4714
+Motor RMP is: 0012
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 16c6 ca2b
+Response Sensor Value: 5830
+Sensor RPM: 16 c6
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 15c3 0a1b
+Response Motor: 5571
+Motor RMP is: 0015
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1509 6e6b
+Response Sensor Value: 5385
+Sensor RPM: 15 09
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 126a 44d9
+Response Motor: 4714
+Motor RMP is: 0012
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1509 6e6b
+Response Sensor Value: 5385
+Sensor RPM: 15 09
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 191c 925f
+Response Motor: 6428
+Motor RMP is: 0019
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1446 0a2b
+Response Sensor Value: 5190
+Sensor RPM: 14 46
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 0f11 3790
+Response Motor: 3857
+Motor RMP is: 000f
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1464 13ab
+Response Sensor Value: 5220
+Sensor RPM: 14 64
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 1416 05db
+Response Motor: 5142
+Motor RMP is: 0014
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1464 13ab
+Response Sensor Value: 5220
+Sensor RPM: 14 64
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 1fce 6fdc
+Response Motor: 8142
+Motor RMP is: 001f
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1408 3eab
+Response Sensor Value: 5128
+Sensor RPM: 14 08
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 126a 44d9
+Response Motor: 4714
+Motor RMP is: 0012
+Sent request: 01 06 0009 2710 f443
+The following was read in [8]: 01 06 0009 2710 f443
+Response Motor Value: 10000
+Motor data is set:2710
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1435 ef6a
+Response Sensor Value: 5173
+Sensor RPM: 14 35
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 1fce 6fdc
+Response Motor: 8142
+Motor RMP is: 001f
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1440 08ab
+Response Sensor Value: 5184
+Sensor RPM: 14 40
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 217b b80d
+Response Motor: 8571
+Motor RMP is: 0021
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1902 a92f
+Response Sensor Value: 6402
+Sensor RPM: 19 02
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 282d d68b
+Response Motor: 10285
+Motor RMP is: 0028
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 1f5b 33ec
+Response Sensor Value: 8027
+Sensor RPM: 1f 5b
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 2328 e54c
+Response Motor: 9000
+Motor RMP is: 0023
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 21e5 237c
+Response Sensor Value: 8677
+Sensor RPM: 21 e5
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 2681 cb8f
+Response Motor: 9857
+Motor RMP is: 0026
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2388 aebc
+Response Sensor Value: 9096
+Sensor RPM: 23 88
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2477 defe
+Response Sensor Value: 9335
+Sensor RPM: 24 77
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2505 6b7f
+Response Sensor Value: 9477
+Sensor RPM: 25 05
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 25df f0fe
+Response Sensor Value: 9695
+Sensor RPM: 25 df
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2559 527f
+Response Sensor Value: 9561
+Sensor RPM: 25 59
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 24d4 944e
+Response Motor: 9428
+Motor RMP is: 0024
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 2635 8f7f
+Response Sensor Value: 9781
+Sensor RPM: 26 35
+Sent request: 01 03 0005 0001 0b94
+The following was read in [8]: 01 03 0005 29da c0cb
+Response Motor: 10714
+Motor RMP is: 0029
+Sent request: 02 03 0006 0000 f8a5
+The following was read in [8]: 02 03 0006 268c 3dbe
+Response Sensor Value: 9868
+Sensor RPM: 26 8c

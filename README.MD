@@ -83,6 +83,12 @@ CH1: RX line Arduino
 CH2: TX line Arduino  
 Bus table: request was sent for function 4, Arduino responds with illegal function response message in the data field.
 
+### systemd
+With the systemd file controller.service the programm main.cpp starts automatically when the rapberry is booting.
+
+### print
+In the printOut.txt is a sample output of the programm. It shows the status change of the motor in the beginning and prints the calculated RPM of the Motor and the Sensor value. 
+
 ## Part 4
 The following Diagram shows the programm:
 

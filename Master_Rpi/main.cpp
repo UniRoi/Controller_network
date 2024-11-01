@@ -6,6 +6,7 @@
 #include<fcntl.h>
 #include<unistd.h>
 #include<termios.h>
+#include <cstring>
 
 struct stMessage
 {
@@ -31,7 +32,7 @@ static uint16_t rst_comm = 0x0082;
 
 
 // OP Modes of nodes
-static uint8_t no_state = 0x00;
+static uint8_t no_state = 0;//0x00;
 static uint8_t operational = 0x01;
 static uint8_t stopped = 0x02;
 static uint8_t pre_operational = 0x80;
@@ -87,14 +88,11 @@ uint16_t ModRTU_CRC(uint8_t buf[], int len)
 }
 
 
-int sendMessage(stMessage send_msg)
-{
-   int file, count;
 
-//    if(len(send_msg)!=5){
-//        printf("Invalid number of arguments, exiting [%d]!\n", argc);
-//        return -2;
-//    }
+int send_and_rec(uint8_t *rec_msg, stMessage send_msg)
+{
+    int file, count;
+
    if ((file = open("/dev/ttyS0", O_RDWR | O_NOCTTY))<0) // remove O_NDELAY
    {
       perror("UART: Failed to open the file.\n");
@@ -102,28 +100,28 @@ int sendMessage(stMessage send_msg)
    }
 
    struct termios options;
+
    tcgetattr(file, &options);
-   cfsetospeed(&options, B115200); // Set up the communication options: 115200 baud
-   cfmakeraw(&options); // set raw mode
+
+   // Set up the communication options: 115200 baud
+   cfsetospeed(&options, B115200);
+   // set raw mode
+   cfmakeraw(&options);
    options.c_cc[VMIN]=1; // min byte number of characters for raw mode
    options.c_cc[VTIME] = 0;
+          
    tcflush(file, TCIFLUSH); // discard file information
    tcsetattr(file, TCSANOW, &options);
 
+   const size_t MSG_LEN = 8;
+   uint8_t msg[MSG_LEN];
+   uint8_t rd_msg[MSG_LEN];
    struct stMessage tMsg;
-
-   // populate the message with integer values in binary format
-//    tMsg.u8ID = (uint8_t)atoi(argv[1]);
-//    tMsg.u8Task = (uint8_t)atoi(argv[2]);
-//    tMsg.u16Addr = (uint16_t)atol(argv[3]);
-//    tMsg.u16Msg = (uint16_t)atol(argv[4]);
 
    tMsg.u8ID = send_msg.u8ID;
    tMsg.u8Task = send_msg.u8Task;
    tMsg.u16Addr = send_msg.u16Addr;
    tMsg.u16Msg = send_msg.u16Msg;
-
-   uint8_t msg[6];
 
    msg[0] = tMsg.u8ID;
    msg[1] = tMsg.u8Task;
@@ -133,11 +131,6 @@ int sendMessage(stMessage send_msg)
    msg[5] = (uint8_t)((tMsg.u16Msg & 0x00FF) >> 0);
    
    tMsg.u16Crc = ModRTU_CRC(msg, 6);   
-   
-   // from his notes: this number has low and high bytes swapped
-   // hopefully this doesn't explode in the future ^^ 
-//    tMsg.u16Crc = ModRTU_CRC(msg, 6);
-   // tMsg.u16Crc = 0x55aa;
 
    printf("Sent request: %02x %02x %04x %04x %04x\n", tMsg.u8ID, tMsg.u8Task, tMsg.u16Addr, tMsg.u16Msg, tMsg.u16Crc);
 
@@ -149,42 +142,19 @@ int sendMessage(stMessage send_msg)
    if (count = write(file, (void*)&tMsg, 8)<0)
    {
       perror("Failed to write to the output\n");
-      return -1;
-   }
-   close(file);
-
-   return 0;
-}
-
-int recMessage(uint8_t *rec_msg)
-{
-   int file, count;
-
-   if ((file = open("/dev/ttyS0", O_RDWR | O_NOCTTY))<0) // remove O_NDELAY
-   {
-      perror("UART: Failed to open the file.\n");
+      close(file);
       return -1;
    }
 
-   struct termios options;
-   tcgetattr(file, &options);
-   cfsetospeed(&options, B115200); // Set up the communication options: 115200 baud
-   cfmakeraw(&options); // set raw mode
-   options.c_cc[VMIN]=1; // min byte number of characters for raw mode
-   options.c_cc[VTIME] = 0;
-   tcflush(file, TCIFLUSH); // discard file information
-   tcsetattr(file, TCSANOW, &options);
+   usleep(100000);
 
-   const size_t MSG_LEN = 8;
-   uint8_t rd_msg[MSG_LEN];
+   unsigned char receive[100];
 
    if ((count = read(file, rd_msg, sizeof(rd_msg)))<0)
    {
       perror("Failed to read from the input\n");
       return -1;
    }
-
-   // CRC check
    uint16_t rd_crc = ModRTU_CRC(rd_msg, 6);
 
    if (count==0) printf("There was no data available to read!\n");
@@ -193,15 +163,14 @@ int recMessage(uint8_t *rec_msg)
       printf("CRC Error, will not use message. Received: 0x%02x%02x Calculated: 0x%04x\n", rd_msg[6], rd_msg[7], rd_crc);
    }
    else {
+      // receive[count]=0;  //There is no null character sent by the Arduino
       printf("The following was read in [%d]: %02x %02x %02x%02x %02x%02x %02x%02x\n",count, rd_msg[0], rd_msg[1],rd_msg[2], rd_msg[3],rd_msg[4], rd_msg[5],rd_msg[6], rd_msg[7]);
-      rec_msg = rd_msg;
+      memcpy(rec_msg, rd_msg, sizeof(rd_msg));
    }
 
    close(file);
-   
    return 0;
 }
-
 
 void handleError(stMessage rec_mes)
 {
@@ -308,75 +277,72 @@ int main(void)
     uint8_t sensor_value[2] = {0};
     uint8_t motor_state[2] = {0};
     uint8_t response[2] = {0};
-    uint8_t motor_state = no_state;
+    //motor_state = no_state;
 
-
-    while(true)
+    while(*motor_state != operational)
     {
-        // ask for motor state
-        while(motor_state != operational)
-        {
-            sendMessage(buildMessage(motor_id, 0x03, motor_state_addr, 0x0001));
-            recMessage(received_message);
+        send_and_rec(received_message, buildMessage(motor_id, 0x03, motor_state_addr, 0x0000));
 
+        if(encodeMessage(received_message, response) > 0)
+        {
+            motor_state[0]  = response[0];
+            motor_state[1]  = response[1];
+            printf("Motor State: %04x\n", *motor_state);
+        }   
+
+        if(motor_state == pre_operational)
+        {
+            send_and_rec(received_message, buildMessage(motor_id, 0x06, motor_state_addr, set_op));
             if(encodeMessage(received_message, response) > 0)
             {
                 motor_state[0]  = response[0];
                 motor_state[1]  = response[1];
-                printf("Motor State: %04x\n", motor_state);
+                printf("Motor State: %04x\n", *motor_state);
             }   
-
-            if(motor_state == pre_operational)
-            {
-                sendMessage(buildMessage(motor_id, 0x06, motor_state_addr, set_op));
-                recMessage(received_message);
-                if(encodeMessage(received_message, response) > 0)
-                {
-                    motor_state[0]  = response[0];
-                    motor_state[1]  = response[1];
-                    printf("Motor State: %04x\n", motor_state);
-                }   
-            }     
-        }
-
-        // Motor in OP Mode
-        if(motor_state == operational)
-        {
-            // ask for motor RPM
-            sendMessage(buildMessage(motor_id, 0x03, motor_rpm_addr, 0x0001));
-            recMessage(received_message);
-
-            if(encodeMessage(received_message, response) > 0)
-            {
-                motor_rpm[0]  = response[0];
-                motor_rpm[1]  = response[1];
-                printf("Motor RMP is: %04x\n", motor_rpm);
-            }
-
-            // Send Motor Target RPM
-            sendMessage(buildMessage(motor_id, 0x06, motor_rpm_addr, set_motorValue));
-            recMessage(received_message);
-
-            if(encodeMessage(received_message, response) > 0)
-            {
-                printf("Motor data is set:%04x\n", response);
-            }
-        }  
-        
-        // Send Sensor Request   
-        sendMessage(buildMessage(sensor_id, 0x03, sensor_rpm_addr, 0x0001));
-        recMessage(received_message);
-
-        if(encodeMessage(received_message, response) >= 0)
-        {
-            sensor_value[0]  = response[0];
-            sensor_value[1]  = response[1];
-            printf("Sensor RMP: %04x\n", sensor_value);
-        }
-
-        
-
+        }     
     }
+
+
+    // while(true)
+    // {
+    //     Motor in OP Mode
+    //     if(motor_state == operational)
+    //     {
+    //         ask for motor RPM
+    //         sendMessage(buildMessage(motor_id, 0x03, motor_rpm_addr, 0x0001));
+    //         recMessage(received_message);
+
+    //         if(encodeMessage(received_message, response) > 0)
+    //         {
+    //             motor_rpm[0]  = response[0];
+    //             motor_rpm[1]  = response[1];
+    //             printf("Motor RMP is: %04x\n", motor_rpm);
+    //         }
+
+    //         Send Motor Target RPM
+    //         sendMessage(buildMessage(motor_id, 0x06, motor_rpm_addr, set_motorValue));
+    //         recMessage(received_message);
+
+    //         if(encodeMessage(received_message, response) > 0)
+    //         {
+    //             printf("Motor data is set:%04x\n", response);
+    //         }
+    //     }  
+        
+    //     Send Sensor Request   
+    //     sendMessage(buildMessage(sensor_id, 0x03, sensor_rpm_addr, 0x0001));
+    //     recMessage(received_message);
+
+    //     if(encodeMessage(received_message, response) >= 0)
+    //     {
+    //         sensor_value[0]  = response[0];
+    //         sensor_value[1]  = response[1];
+    //         printf("Sensor RMP: %04x\n", sensor_value);
+    //     }
+
+        
+
+    // }
     
     return 0;
 }

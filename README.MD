@@ -88,3 +88,8 @@ The following Diagram shows the programm:
 
 ![Flowchart](./images/UMLfile1.png)
 
+On the following figure the Step response is shown with both sensors displaying the RPM:
+
+![Flowchart](./images/StepResponse.png)
+
+

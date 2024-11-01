@@ -81,7 +81,7 @@ Bus table: request was sent to write value 120 at address 1, Arduino responds wi
 ![Arduino_resp_ill_func](./images/Network_Arduino_responds_w_ill_func.PNG)
 CH1: RX line Arduino  
 CH2: TX line Arduino  
-Bus table: request was sent for function 4, Arduino responds with illegal function response message in the data field  
+Bus table: request was sent for function 4, Arduino responds with illegal function response message in the data field.
 
 ## Part 4
 The following DIagram shows the programm:

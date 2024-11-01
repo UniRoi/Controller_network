@@ -84,6 +84,7 @@ CH2: TX line Arduino
 Bus table: request was sent for function 4, Arduino responds with illegal function response message in the data field.
 
 ## Part 4
-The following DIagram shows the programm:
+The following Diagram shows the programm:
+
 ![Flowchart](./images/UMLfile1.png)
 

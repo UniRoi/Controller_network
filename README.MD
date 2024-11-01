@@ -93,3 +93,7 @@ On the following figure the Step response is shown with both sensors displaying 
 ![Flowchart](./images/StepResponse.png)
 
 
+YouTube: https://youtu.be/4T9cs9V0CYY?si=DkrCI6loCEgpb1c4
+GitHub: https://github.com/UniRoi/Controller_network
+
+
